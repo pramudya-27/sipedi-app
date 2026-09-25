@@ -1,0 +1,32 @@
+{
+  "topBar": {
+    "phone": "+62 (800) 123-4567",
+    "email": "halo@sipedi.go.id",
+    "language": "Language",
+    "followUs": "Follow us on:"
+  },
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "permits": "Permits",
+    "complaints": "Complaints",
+    "aiAssistant": "AI Assistant",
+    "login": "Login",
+    "register": "Register"
+  },
+  "hero": {
+    "title": "Hassle-Free Permits. Report Issues Easily.",
+    "subtitle": "SIPEDI helps citizens access micro-licensing services and submit public order complaints transparently, easily, and trackably.",
+    "ctaPermit": "Apply for Permit",
+    "ctaComplaint": "Submit Complaint",
+    "ctaAI": "Ask AI Assistant"
+  },
+  "services": {
+    "permitTitle": "Digital Micro Licensing",
+    "permitDesc": "Fast and transparent process for your business.",
+    "complaintTitle": "Public Order Complaints",
+    "complaintDesc": "Report disturbances securely.",
+    "aiTitle": "Integrated AI Guide",
+    "aiDesc": "Get instant help for your needs."
+  }
+}

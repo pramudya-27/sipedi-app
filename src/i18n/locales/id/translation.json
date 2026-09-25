@@ -1,0 +1,32 @@
+{
+  "topBar": {
+    "phone": "+62 (800) 123-4567",
+    "email": "halo@sipedi.go.id",
+    "language": "Bahasa",
+    "followUs": "Ikuti kami di:"
+  },
+  "nav": {
+    "home": "Beranda",
+    "services": "Layanan",
+    "permits": "Perizinan",
+    "complaints": "Pengaduan",
+    "aiAssistant": "AI Assistant",
+    "login": "Masuk",
+    "register": "Daftar"
+  },
+  "hero": {
+    "title": "Urus Izin Tanpa Ribet. Laporkan Gangguan dengan Mudah.",
+    "subtitle": "SIPEDI membantu masyarakat mengakses layanan perizinan mikro dan menyampaikan pengaduan ketertiban secara transparan, mudah, dan terpantau.",
+    "ctaPermit": "Ajukan Perizinan",
+    "ctaComplaint": "Buat Pengaduan",
+    "ctaAI": "Tanya AI Assistant"
+  },
+  "services": {
+    "permitTitle": "Perizinan Mikro Digital",
+    "permitDesc": "Proses cepat dan transparan untuk usaha Anda.",
+    "complaintTitle": "Pengaduan Ketertiban",
+    "complaintDesc": "Laporkan gangguan dengan aman.",
+    "aiTitle": "Panduan AI Terintegrasi",
+    "aiDesc": "Dapatkan bantuan instan untuk kebutuhan Anda."
+  }
+}
