@@ -1,7 +1,7 @@
 # SIPEDI (Sistem Perizinan Digital Mikro dan Layanan Pengaduan Ketertiban Berbasis Asisten AI)
 
 <p align="center">
-  <img src="frontend/src/assets/logo.png" alt="SIPEDI Logo" width="120" />
+  <img src="frontend/src/assets/logo1.png" alt="SIPEDI Logo" width="120" />
 </p>
 
 <p align="center">
