@@ -7,7 +7,7 @@ export const CitizenLayout: React.FC = () => {
   const { t } = useTranslation();
   
   const navigation = [
-    { name: t('nav.home'), href: '/citizen/dashboard', icon: Home },
+    { name: t('nav.home'), href: '/', icon: Home },
     { name: t('nav.permits'), href: '/citizen/permits', icon: FileText },
     { name: t('nav.complaints'), href: '/citizen/complaints', icon: ShieldAlert },
     { name: 'Notifikasi', href: '/citizen/notifications', icon: Bell },

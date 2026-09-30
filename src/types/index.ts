@@ -3,6 +3,8 @@ export interface User {
   name: string;
   email: string;
   role: 'CITIZEN' | 'ADMIN' | 'OFFICER';
+  createdAt?: string;
+  created_at?: string;
 }
 
 export interface Permit {

@@ -4,7 +4,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { Menu, LogOut, Bell, User as UserIcon } from 'lucide-react';
 import { clsx } from 'clsx';
-import logo from '../../assets/logo.png';
+import logo from '../../assets/logo1.png';
 
 interface SidebarItem {
   name: string;

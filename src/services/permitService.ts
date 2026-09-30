@@ -1,37 +1,36 @@
-// import { api } from './api';
+import { api } from './api';
 import type { Permit } from '../types';
-import { mockPermits } from '../data/mockPermits';
 
-// For MVP, we use mock data wrapped in Promises to simulate network requests.
-// When connecting to FastAPI, replace the mock returns with `return api.get('/permits')` etc.
+const mapPermit = (p: any): Permit => ({
+  id: p.id,
+  permitNumber: p.permit_number || p.permitNumber,
+  type: p.type,
+  businessName: p.business_name || p.businessName,
+  applicantId: p.applicant_id || p.applicantId,
+  applicantName: p.applicant?.name || 'User',
+  submissionDate: p.submission_date || p.submissionDate || new Date().toISOString(),
+  status: p.status,
+  lastUpdate: p.last_update || p.lastUpdate || new Date().toISOString()
+});
 
 export const permitService = {
   getPermits: async (): Promise<Permit[]> => {
-    // return api.get('/permits').then(res => res.data);
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(mockPermits), 500);
-    });
+    return api.get('/permits').then(res => res.data.map(mapPermit));
   },
 
-  getPermitById: async (id: string): Promise<Permit | undefined> => {
-    // return api.get(`/permits/${id}`).then(res => res.data);
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(mockPermits.find(p => p.id === id)), 500);
-    });
+  getPermitById: async (id: string): Promise<Permit> => {
+    return api.get(`/permits/${id}`).then(res => mapPermit(res.data));
   },
 
-  createPermit: async (data: Partial<Permit>): Promise<Permit> => {
-    // return api.post('/permits', data).then(res => res.data);
-    return new Promise((resolve) => {
-      const newPermit = {
-        ...data,
-        id: `p${Date.now()}`,
-        permitNumber: `SIP-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`,
-        status: 'Submitted' as const,
-        submissionDate: new Date().toISOString(),
-        lastUpdate: new Date().toISOString()
-      } as Permit;
-      setTimeout(() => resolve(newPermit), 1000);
-    });
+  createPermit: async (formData: FormData): Promise<Permit> => {
+    return api.post('/permits', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }).then(res => mapPermit(res.data));
+  },
+  
+  updateStatus: async (id: string, status: string): Promise<Permit> => {
+    return api.put(`/permits/${id}/status`, { status }).then(res => mapPermit(res.data));
   }
 };

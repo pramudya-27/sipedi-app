@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Get base URL from env, fallback to localhost for demo
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 export const api = axios.create({
@@ -10,7 +9,6 @@ export const api = axios.create({
   },
 });
 
-// Add interceptors for auth token in the future
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token && config.headers) {
@@ -18,3 +16,15 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+

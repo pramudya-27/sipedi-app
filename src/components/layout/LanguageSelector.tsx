@@ -82,18 +82,17 @@ export const LanguageSelector: React.FC = () => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2.5 bg-white/10 hover:bg-white/20 active:bg-white/25 text-white px-3 py-1.5 rounded-full text-xs font-medium border border-white/15 backdrop-blur-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary-400 cursor-pointer shadow-xs"
+        className="flex items-center space-x-2 text-white px-3 py-1.5 text-xs font-bold uppercase tracking-wider hover:bg-white/10 transition-colors focus:outline-none cursor-pointer rounded-none border border-transparent hover:border-white/20"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <Globe size={13} className="text-primary-300 opacity-90" />
-        <span className="flex items-center space-x-1.5">
+        <span className="flex items-center space-x-2">
           <CurrentFlag className="w-4 h-3" />
-          <span className="tracking-wide">{currentLang.label}</span>
+          <span>{currentLang.label}</span>
         </span>
         <ChevronDown
-          size={12}
-          className={`text-white/70 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          size={14}
+          className={`text-white transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -101,19 +100,19 @@ export const LanguageSelector: React.FC = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.96 }}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute right-0 mt-2 w-52 rounded-xl bg-white text-gray-900 shadow-2xl ring-1 ring-black/10 py-1.5 z-[70] overflow-hidden border border-gray-100"
+            className="absolute right-0 mt-2 w-48 bg-white shadow-xl py-1 z-[70] border-t-2 border-[#333366]"
           >
-            <div className="px-3 py-1.5 border-b border-gray-100 mb-1">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                Pilih Bahasa / Language
+            <div className="px-4 py-2 border-b border-gray-100 bg-gray-50">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                Pilih Bahasa
               </p>
             </div>
 
-            <div className="p-1 space-y-0.5">
+            <div className="flex flex-col">
               {languages.map((item) => {
                 const FlagComponent = item.flag;
                 const isSelected = i18n.language === item.code;
@@ -123,23 +122,22 @@ export const LanguageSelector: React.FC = () => {
                     key={item.code}
                     type="button"
                     onClick={() => handleSelectLanguage(item.code)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs transition-colors cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors cursor-pointer rounded-none ${
                       isSelected
-                        ? 'bg-primary-50 text-primary-900 font-semibold'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-[#333366] text-white'
+                        : 'text-gray-800 hover:bg-gray-100'
                     }`}
                   >
-                    <div className="flex items-center space-x-2.5">
-                      <FlagComponent className="w-5 h-3.5 shadow-xs" />
+                    <div className="flex items-center space-x-3">
+                      <FlagComponent className="w-5 h-3.5 shadow-sm" />
                       <div>
-                        <div className="leading-tight font-medium text-gray-900">{item.label}</div>
-                        <div className="text-[10px] text-gray-400">{item.subLabel}</div>
+                        <div className="text-xs font-bold uppercase tracking-wider">{item.label}</div>
                       </div>
                     </div>
 
                     {isSelected && (
-                      <span className="flex items-center text-primary-600 bg-primary-100/70 p-1 rounded-full">
-                        <Check size={12} strokeWidth={3} />
+                      <span className="text-white">
+                        <Check size={16} strokeWidth={3} />
                       </span>
                     )}
                   </button>

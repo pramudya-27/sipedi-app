@@ -1,9 +1,10 @@
 import React from 'react';
-import { LayoutDashboard, FileText, ShieldAlert, Users, History } from 'lucide-react';
+import { LayoutDashboard, FileText, ShieldAlert, Users, History, Home } from 'lucide-react';
 import { DashboardLayout } from './DashboardLayout';
 
 export const AdminLayout: React.FC = () => {
   const navigation = [
+    { name: 'Kembali ke Beranda', href: '/', icon: Home },
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Manajemen Perizinan', href: '/admin/permits', icon: FileText },
     { name: 'Manajemen Pengaduan', href: '/admin/complaints', icon: ShieldAlert },

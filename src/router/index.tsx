@@ -6,25 +6,29 @@ import { PageTransition } from '../components/layout/PageTransition';
 
 // Layouts
 import { PublicLayout } from '../components/layout/PublicLayout';
-import { CitizenLayout } from '../components/layout/CitizenLayout';
 import { AdminLayout } from '../components/layout/AdminLayout';
-import { OfficerLayout } from '../components/layout/OfficerLayout';
 
 // Public Pages
 import { LandingPage } from '../pages/public/LandingPage';
+import { AboutUs } from '../pages/public/AboutUs';
+import { Services } from '../pages/public/Services';
 import { Login } from '../pages/public/Login';
 import { Register } from '../pages/public/Register';
 import { AIAssistant } from '../pages/public/AIAssistant';
 
 // Citizen Pages
-import { CitizenDashboard } from '../pages/citizen/CitizenDashboard';
-import { CitizenPermitList } from '../pages/citizen/CitizenPermitList';
+import { CreatePermit } from '../pages/citizen/CreatePermit';
+import { CreateComplaint } from '../pages/citizen/CreateComplaint';
+import { Profile } from '../pages/citizen/Profile';
+
+// Public Footer Pages
+import { Contact } from '../pages/public/Contact';
 
 // Admin Pages
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
-
-// Officer Pages
-import { OfficerDashboard } from '../pages/officer/OfficerDashboard';
+import { AdminPermitList } from '../pages/admin/AdminPermitList';
+import { AdminUserList } from '../pages/admin/AdminUserList';
+import { AdminComplaintList } from '../pages/admin/AdminComplaintList';
 
 // Placeholder
 const Placeholder = ({ title }: { title: string }) => (
@@ -51,41 +55,40 @@ const AnimatedRoutes = () => {
         {/* Public Routes */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
-          <Route path="/services" element={<Placeholder title="Services Directory" />} />
-          <Route path="/ai-assistant" element={<PageTransition><AIAssistant /></PageTransition>} />
+          <Route path="/about" element={<PageTransition><AboutUs /></PageTransition>} />
+          <Route path="/services" element={<PageTransition><Services /></PageTransition>} />
+          <Route path="/ai-assistant" element={<ProtectedRoute allowedRoles={['CITIZEN', 'ADMIN']}><PageTransition><AIAssistant /></PageTransition></ProtectedRoute>} />
+          <Route path="/permits" element={<ProtectedRoute allowedRoles={['CITIZEN', 'ADMIN']}><Navigate to="/citizen/permits/create" replace /></ProtectedRoute>} />
+          <Route path="/permits/create" element={<ProtectedRoute allowedRoles={['CITIZEN']}><Navigate to="/citizen/permits/create" replace /></ProtectedRoute>} />
+          <Route path="/complaints" element={<ProtectedRoute allowedRoles={['CITIZEN', 'ADMIN']}><Navigate to="/citizen/complaints/create" replace /></ProtectedRoute>} />
+          <Route path="/complaints/create" element={<ProtectedRoute allowedRoles={['CITIZEN']}><Navigate to="/citizen/complaints/create" replace /></ProtectedRoute>} />
           <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
           <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
+          <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
         </Route>
 
         {/* Citizen Routes */}
-        <Route path="/citizen" element={<ProtectedRoute allowedRoles={['CITIZEN']}><CitizenLayout /></ProtectedRoute>}>
-          <Route path="dashboard" element={<PageTransition><CitizenDashboard /></PageTransition>} />
-          <Route path="permits" element={<PageTransition><CitizenPermitList /></PageTransition>} />
-          <Route path="permits/create" element={<Placeholder title="Create Permit" />} />
+        <Route path="/citizen" element={<ProtectedRoute allowedRoles={['CITIZEN']}><PublicLayout /></ProtectedRoute>}>
+          <Route path="dashboard" element={<Navigate to="/" replace />} />
+          <Route path="permits" element={<Navigate to="/citizen/permits/create" replace />} />
+          <Route path="permits/create" element={<PageTransition><CreatePermit /></PageTransition>} />
           <Route path="permits/:id" element={<Placeholder title="Permit Detail" />} />
-          <Route path="complaints" element={<Placeholder title="My Complaints" />} />
-          <Route path="complaints/create" element={<Placeholder title="Create Complaint" />} />
+          <Route path="complaints" element={<Navigate to="/citizen/complaints/create" replace />} />
+          <Route path="complaints/create" element={<PageTransition><CreateComplaint /></PageTransition>} />
           <Route path="complaints/:id" element={<Placeholder title="Complaint Detail" />} />
           <Route path="notifications" element={<Placeholder title="Notifications" />} />
-          <Route path="profile" element={<Placeholder title="Profile" />} />
+          <Route path="profile" element={<PageTransition><Profile /></PageTransition>} />
         </Route>
 
         {/* Admin Routes */}
         <Route path="/admin" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminLayout /></ProtectedRoute>}>
           <Route path="dashboard" element={<PageTransition><AdminDashboard /></PageTransition>} />
-          <Route path="permits" element={<Placeholder title="Manage Permits" />} />
+          <Route path="permits" element={<PageTransition><AdminPermitList /></PageTransition>} />
           <Route path="permits/:id" element={<Placeholder title="Permit Detail" />} />
-          <Route path="complaints" element={<Placeholder title="Manage Complaints" />} />
+          <Route path="complaints" element={<PageTransition><AdminComplaintList /></PageTransition>} />
           <Route path="complaints/:id" element={<Placeholder title="Complaint Detail" />} />
-          <Route path="users" element={<Placeholder title="Manage Users" />} />
+          <Route path="users" element={<PageTransition><AdminUserList /></PageTransition>} />
           <Route path="audit-logs" element={<Placeholder title="Audit Logs" />} />
-        </Route>
-
-        {/* Officer Routes */}
-        <Route path="/officer" element={<ProtectedRoute allowedRoles={['OFFICER']}><OfficerLayout /></ProtectedRoute>}>
-          <Route path="dashboard" element={<PageTransition><OfficerDashboard /></PageTransition>} />
-          <Route path="tasks" element={<Placeholder title="My Tasks" />} />
-          <Route path="tasks/:id" element={<Placeholder title="Task Detail" />} />
         </Route>
       </Routes>
     </AnimatePresence>

@@ -1,29 +1,42 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import type { Role } from '../../store/authStore';
-import logo from '../../assets/logo.png';
+import logo from '../../assets/logo1.png';
+import { api } from '../../services/api';
+import { LogIn, AlertCircle } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<Role>('CITIZEN');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const login = useAuthStore(state => state.login);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
     
-    // Mock login
-    login({
-      id: 'usr-1',
-      name: role === 'ADMIN' ? 'Admin Pusat' : role === 'OFFICER' ? 'Petugas Budi' : 'Andi Pratama',
-      email: email || 'user@example.com',
-      role: role
-    });
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const { access_token, user } = response.data;
+      
+      localStorage.setItem('token', access_token);
+      
+      login({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      });
 
-    if (role === 'CITIZEN') navigate('/citizen/dashboard');
-    if (role === 'ADMIN') navigate('/admin/dashboard');
-    if (role === 'OFFICER') navigate('/officer/dashboard');
+      navigate('/');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Email atau password salah. Silakan periksa kembali.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -41,27 +54,34 @@ export const Login: React.FC = () => {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border-t-4 border-primary-600">
+        <div className="bg-white py-8 px-4 border border-gray-300 sm:px-10 border-t-8 border-[#0b3c5d]">
+          {error && (
+            <div className="mb-4 flex items-center gap-2 p-3 text-sm text-red-700 bg-red-50 border border-red-200">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email / NIK
+              <label htmlFor="email" className="block text-sm font-bold text-gray-700">
+                Email
               </label>
               <div className="mt-1">
                 <input
                   id="email"
-                  type="text"
+                  type="email"
                   required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  className="appearance-none block w-full px-4 py-3 border border-gray-400 rounded-none placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0b3c5d] focus:border-[#0b3c5d] text-base bg-gray-50"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="andi@example.com / 3171..."
+                  placeholder="nama@email.com"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-bold text-gray-700">
                 Password
               </label>
               <div className="mt-1">
@@ -69,31 +89,22 @@ export const Login: React.FC = () => {
                   id="password"
                   type="password"
                   required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  defaultValue="password123"
+                  className="appearance-none block w-full px-4 py-3 border border-gray-400 rounded-none placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0b3c5d] focus:border-[#0b3c5d] text-base bg-gray-50"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Masukkan password Anda"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Simulasi Peran (Khusus Demo)</label>
-              <select
-                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
-                value={role || ''}
-                onChange={(e) => setRole(e.target.value as Role)}
-              >
-                <option value="CITIZEN">Masyarakat (Citizen)</option>
-                <option value="ADMIN">Pemerintah (Admin)</option>
-                <option value="OFFICER">Petugas Lapangan (Officer)</option>
-              </select>
-            </div>
-
-            <div>
+            <div className="pt-2">
               <button
                 type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                disabled={loading}
+                className="w-full flex justify-center items-center py-3 px-4 border-2 border-[#0b3c5d] rounded-none text-base font-bold text-white bg-[#0b3c5d] hover:bg-[#082a42] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0b3c5d] disabled:opacity-50 transition-colors"
               >
-                Masuk
+                <LogIn className="w-5 h-5 mr-2" />
+                {loading ? 'Memproses...' : 'Masuk'}
               </button>
             </div>
           </form>
