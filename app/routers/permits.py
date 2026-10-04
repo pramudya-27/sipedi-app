@@ -1,7 +1,7 @@
 import os, uuid
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_admin_user
@@ -27,10 +27,19 @@ def get_permit(permit_id: str, db: Session = Depends(get_db), current_user: User
         raise HTTPException(status_code=403, detail='Not enough permissions')
     return permit
 
+from app.utils.cloudinary_upload import upload_file_to_cloudinary
+
 @router.post('', response_model=PermitResponse)
 async def create_permit(
     type: str = Form(...),
     business_name: str = Form(...),
+    full_name: Optional[str] = Form(None),
+    nik: Optional[str] = Form(None),
+    phone: Optional[str] = Form(None),
+    email: Optional[str] = Form(None),
+    address: Optional[str] = Form(None),
+    business_sector: Optional[str] = Form(None),
+    business_address: Optional[str] = Form(None),
     documents: List[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -43,19 +52,20 @@ async def create_permit(
     db.commit()
     db.refresh(new_permit)
     
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     for doc in documents:
         if not doc.filename:
             continue
-        file_ext = os.path.splitext(doc.filename)[1]
-        file_name = f'{uuid.uuid4()}{file_ext}'
-        file_path = os.path.join(settings.UPLOAD_DIR, file_name)
-        with open(file_path, 'wb') as f:
-            content = await doc.read()
-            f.write(content)
-        
-        permit_doc = PermitDocument(permit_id=new_permit.id, document_type='attachment', file_path=f'/uploads/{file_name}')
-        db.add(permit_doc)
+            
+        try:
+            image_url = upload_file_to_cloudinary(
+                file=doc,
+                folder_name='SIPEDI/perizinan'
+            )
+            permit_doc = PermitDocument(permit_id=new_permit.id, document_type='attachment', file_path=image_url)
+            db.add(permit_doc)
+        except Exception as e:
+            print(f"Failed to upload document to cloudinary: {e}")
+            
     db.commit()
     db.refresh(new_permit)
     return new_permit

@@ -12,6 +12,7 @@ class User(Base):
     name = Column(String(150), nullable=False)
     hashed_password = Column(String(255), nullable=False)
     role = Column(Enum('CITIZEN', 'ADMIN', name='user_roles'), default='CITIZEN', nullable=False)
+    profile_picture = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     permits = relationship('Permit', back_populates='applicant')

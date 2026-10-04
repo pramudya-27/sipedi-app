@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db
-from app.core.dependencies import get_admin_user
+from app.core.dependencies import get_admin_user, get_current_user
 from app.models.user import User
 from app.schemas.user import UserResponse, UserRoleUpdate
+from app.utils.cloudinary_upload import upload_file_to_cloudinary, delete_file_from_cloudinary
 
 router = APIRouter(prefix='/api/users', tags=['Users'])
 
@@ -65,3 +66,52 @@ def delete_user(
     db.delete(target_user)
     db.commit()
     return {'message': 'Pengguna berhasil dihapus'}
+
+@router.post('/profile-picture', response_model=UserResponse)
+def upload_profile_picture(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        # Upload to Cloudinary
+        image_url = upload_file_to_cloudinary(
+            file=file,
+            folder_name='SIPEDI/profile-pictures',
+            public_id=f"profile_{current_user.id}"
+        )
+        
+        # Update user in DB
+        current_user.profile_picture = image_url
+        db.commit()
+        db.refresh(current_user)
+        
+        return current_user
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f'Failed to upload image: {str(e)}'
+        )
+
+@router.delete('/profile-picture', response_model=UserResponse)
+def delete_profile_picture(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        if current_user.profile_picture:
+            # Delete from Cloudinary
+            public_id = f"SIPEDI/profile-pictures/profile_{current_user.id}"
+            delete_file_from_cloudinary(public_id)
+            
+            # Update user in DB
+            current_user.profile_picture = None
+            db.commit()
+            db.refresh(current_user)
+            
+        return current_user
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f'Failed to delete image: {str(e)}'
+        )

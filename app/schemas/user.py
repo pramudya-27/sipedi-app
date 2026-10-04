@@ -17,6 +17,7 @@ class UserLogin(BaseModel):
 class UserResponse(UserBase):
     id: str
     role: str
+    profile_picture: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -29,4 +30,11 @@ class Token(BaseModel):
 
 class UserRoleUpdate(BaseModel):
     role: str
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
 
