@@ -10,7 +10,7 @@ import {
   Sparkles,
   Check,
   ShieldCheck,
-  CheckCircle,
+  CheckCircle, Search,
 } from "lucide-react";
 import heroBg from "../../assets/city.jpg";
 import heroBg2 from "../../assets/market1.jpg";
@@ -246,172 +246,52 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. Bottom Info Banner (Modern 2-Column Split Feature Card) */}
-      <div className="px-4 sm:px-6 lg:px-8 pb-16 mt-8">
-        <section className="relative max-w-6xl mx-auto bg-slate-900 rounded-[2.5rem] p-8 sm:p-12 lg:p-16 border border-slate-800 shadow-2xl overflow-hidden">
-          {/* Subtle Ambient Glow Accents */}
-          <div className="absolute -top-32 -right-32 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
-          <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center relative z-10">
-            {/* Left Column: Value Proposition & Actions */}
-            <div className="lg:col-span-7 text-left space-y-6">
-              {/* Trust Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Asisten Virtual Resmi Pelayanan Terpadu</span>
-                <span className="text-slate-500">•</span>
-                <span className="text-slate-300">Aktif 24 Jam</span>
+        {/* 4. Bottom Info Banner (Layanan Terpadu) */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-20">
+          <div className="bg-[#020617] rounded-3xl p-8 lg:p-12 relative overflow-hidden border border-[#1e3a8a]/30 shadow-2xl shadow-[#1e3a8a]/10">
+            {/* Background Glow */}
+            <div className="absolute top-0 right-0 -mr-20 -mt-20 w-[40rem] h-[40rem] bg-gradient-to-br from-[#1e3a8a]/20 to-transparent rounded-full blur-[100px] pointer-events-none"></div>
+            
+            <div className="relative z-10">
+              <div className="text-center mb-10">
+                <h2 className="text-3xl font-extrabold text-white tracking-tight mb-4">Layanan Terpadu <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">SIPEDI</span></h2>
+                <p className="text-slate-400 max-w-2xl mx-auto">Akses cepat ke layanan utama kami. Kami berkomitmen memberikan pelayanan prima, transparan, dan bebas pungutan liar.</p>
               </div>
 
-              {/* Headline */}
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-[1.15]">
-                Konsultasi Perizinan & Regulasi,{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
-                  Tanpa Perlu Antre
-                </span>
-              </h2>
-
-              {/* Subtitle */}
-              <p className="text-slate-300 text-base sm:text-lg leading-relaxed max-w-xl font-normal">
-                Ditenagai kecerdasan buatan berbasis SOP dinas terkait. Dapatkan
-                kepastian syarat berkas, tata cara pengaduan pelanggaran, hingga
-                alur verifikasi secara transparan.
-              </p>
-
-              {/* Quick Topic Chips */}
-              <div className="pt-2 space-y-2.5">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
-                  Topik yang Sering Ditanyakan Warga:
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    "Syarat Izin Usaha Mikro (IUMK)",
-                    "Alur Lapor Pungli & Ketertiban",
-                    "Waktu Verifikasi Berkas",
-                    "Biaya Retribusi (Gratis)",
-                  ].map((topic, i) => (
-                    <Link
-                      key={i}
-                      to="/ai-assistant"
-                      className="inline-flex items-center text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-all group"
-                    >
-                      <Sparkles
-                        className="w-3 h-3 mr-1.5 text-blue-400 group-hover:text-blue-300"
-                        strokeWidth={1.75}
-                      />
-                      {topic}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              {/* CTA Buttons & Guarantee */}
-              <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-                <Link
-                  to="/ai-assistant"
-                  className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold text-base px-7 py-3.5 rounded-xl shadow-lg shadow-blue-600/25 transition-all group cursor-pointer"
-                >
-                  Mulai Percakapan AI
-                  <ArrowRight
-                    className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1"
-                    strokeWidth={2}
-                  />
-                </Link>
-                <div className="flex items-center justify-center sm:justify-start gap-2 text-xs text-slate-400">
-                  <ShieldCheck
-                    className="w-4 h-4 text-emerald-400 shrink-0"
-                    strokeWidth={1.75}
-                  />
-                  <span>100% Layanan Bebas Biaya Retribusi</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: High-Fidelity UI Chat Preview */}
-            <div className="lg:col-span-5">
-              <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-sm relative text-left">
-                {/* Chat Header */}
-                <div className="flex items-center justify-between pb-4 border-b border-slate-800/80 mb-5">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                      <Bot className="w-4 h-4" strokeWidth={1.75} />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                        SIPEDI AI Assistant
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                      </div>
-                      <div className="text-[10px] text-slate-400">
-                        Panduan Pelayanan Mandiri
-                      </div>
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Perizinan Card */}
+                <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 hover:border-blue-500/50 transition-colors group">
+                  <div className="w-12 h-12 rounded-xl bg-blue-900/30 flex items-center justify-center mb-4 group-hover:bg-blue-900/50 transition-colors">
+                    <FileText className="w-6 h-6 text-blue-400" />
                   </div>
-                  <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                    SOP Terverifikasi
-                  </span>
+                  <h3 className="text-lg font-bold text-white mb-2">Perizinan Mikro</h3>
+                  <p className="text-sm text-slate-400 mb-4">Pengajuan Izin Usaha Mikro (IUMK) dan Nomor Induk Berusaha (NIB) dengan proses cepat.</p>
+                  <Link to="/permits" className="text-sm font-semibold text-blue-400 hover:text-blue-300 inline-flex items-center">
+                    Ajukan Sekarang <ArrowRight className="w-4 h-4 ml-1" />
+                  </Link>
                 </div>
 
-                {/* Chat Stream */}
-                <div className="space-y-4 text-xs">
-                  {/* User Bubble */}
-                  <div className="flex items-start justify-end gap-2.5">
-                    <div className="bg-blue-600 text-white p-3 rounded-2xl rounded-tr-sm max-w-[85%] leading-relaxed shadow-sm">
-                      Halo! Apa saja syarat utama untuk izin usaha mikro kuliner
-                      dan berapa biayanya?
-                    </div>
-                    <div className="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 shrink-0 text-[10px] font-bold">
-                      W
-                    </div>
+                {/* Pengaduan Card */}
+                <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 hover:border-emerald-500/50 transition-colors group">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-900/30 flex items-center justify-center mb-4 group-hover:bg-emerald-900/50 transition-colors">
+                    <ShieldCheck className="w-6 h-6 text-emerald-400" />
                   </div>
-
-                  {/* AI Bubble */}
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-6 h-6 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
-                      <Bot className="w-3.5 h-3.5" strokeWidth={1.75} />
-                    </div>
-                    <div className="bg-slate-900 border border-slate-800 text-slate-200 p-3.5 rounded-2xl rounded-tl-sm max-w-[90%] leading-relaxed space-y-2">
-                      <p>
-                        Halo! Pengajuan{" "}
-                        <strong className="text-white">
-                          Izin Usaha Mikro (IUMK)
-                        </strong>{" "}
-                        di SIPEDI sepenuhnya{" "}
-                        <span className="text-emerald-400 font-bold">
-                          GRATIS (Rp 0)
-                        </span>
-                        .
-                      </p>
-                      <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 space-y-1 text-[11px] text-slate-300">
-                        <div className="font-semibold text-slate-200">
-                          Berkas yang diperlukan:
-                        </div>
-                        <div>1. KTP Elektronik (NIK pemohon)</div>
-                        <div>2. Foto tempat / aktivitas usaha</div>
-                        <div>3. Pernyataan legalitas mandiri</div>
-                      </div>
-                      <div className="text-[10px] text-slate-400 pt-1 flex items-center gap-1">
-                        <CheckCircle
-                          className="w-3.5 h-3.5 text-emerald-400 shrink-0"
-                          strokeWidth={2}
-                        />
-                        <span>Estimasi terbit: 1x24 jam kerja</span>
-                      </div>
-                    </div>
-                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2">Pengaduan Ketertiban</h3>
+                  <p className="text-sm text-slate-400 mb-4">Layanan pelaporan pelanggaran ketertiban umum dan aduan masyarakat sekitar.</p>
+                  <Link to="/complaints" className="text-sm font-semibold text-emerald-400 hover:text-emerald-300 inline-flex items-center">
+                    Buat Laporan <ArrowRight className="w-4 h-4 ml-1" />
+                  </Link>
                 </div>
 
-                {/* Footer Link inside Mockup */}
-                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400 flex items-center gap-1.5">
-                    <Sparkles className="w-3 h-3 text-blue-400" /> Tanyakan
-                    kasus Anda langsung
-                  </span>
-                  <Link
-                    to="/ai-assistant"
-                    className="font-semibold text-blue-400 hover:text-blue-300 transition-colors"
-                  >
-                    Buka Asisten &rarr;
+                {/* Cek Status Card */}
+                <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 hover:border-indigo-500/50 transition-colors group">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-900/30 flex items-center justify-center mb-4 group-hover:bg-indigo-900/50 transition-colors">
+                    <Search className="w-6 h-6 text-indigo-400" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2">Cek Status</h3>
+                  <p className="text-sm text-slate-400 mb-4">Pantau perkembangan berkas perizinan atau tindak lanjut pengaduan Anda secara real-time.</p>
+                  <Link to="/dashboard" className="text-sm font-semibold text-indigo-400 hover:text-indigo-300 inline-flex items-center">
+                    Lihat Dashboard <ArrowRight className="w-4 h-4 ml-1" />
                   </Link>
                 </div>
               </div>
