@@ -14,6 +14,8 @@ import { AboutUs } from '../pages/public/AboutUs';
 import { Services } from '../pages/public/Services';
 import { Login } from '../pages/public/Login';
 import { Register } from '../pages/public/Register';
+import { ForgotPassword } from '../pages/public/ForgotPassword';
+import { ResetPassword } from '../pages/public/ResetPassword';
 import { AIAssistant } from '../pages/public/AIAssistant';
 
 // Citizen Pages
@@ -64,6 +66,8 @@ const AnimatedRoutes = () => {
           <Route path="/complaints/create" element={<ProtectedRoute allowedRoles={['CITIZEN']}><Navigate to="/citizen/complaints/create" replace /></ProtectedRoute>} />
           <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
           <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
+          <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
+          <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
           <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
         </Route>
 
@@ -95,9 +99,12 @@ const AnimatedRoutes = () => {
   );
 };
 
+import { ScrollToTop } from '../components/common/ScrollToTop';
+
 export const AppRouter = () => {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AnimatedRoutes />
     </BrowserRouter>
   );

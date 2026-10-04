@@ -28,7 +28,7 @@ export const DashboardLayout: React.FC<Props> = ({ navigation, title }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="min-h-screen bg-transparent flex">
       {/* Sidebar */}
       <div className={clsx(
         "fixed inset-y-0 left-0 z-50 w-64 bg-primary-950 text-white transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0",
