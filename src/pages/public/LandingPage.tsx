@@ -10,7 +10,7 @@ import {
   Sparkles,
   Check,
   ShieldCheck,
-  CheckCircle, Search,
+  CheckCircle,
 } from "lucide-react";
 import heroBg from "../../assets/city.jpg";
 import heroBg2 from "../../assets/market1.jpg";
@@ -299,6 +299,5 @@ export const LandingPage: React.FC = () => {
           </div>
         </section>
       </div>
-    </div>
   );
 };
