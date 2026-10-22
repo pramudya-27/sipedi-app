@@ -1,29 +1,180 @@
-import React, {useState, useRef} from "react";
-import {useAuthStore} from "../../store/authStore";
-import {Camera, Save, User, Mail, Phone, MapPin, Shield, Loader2, Trash2} from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { useAuthStore } from "../../store/authStore";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Camera,
+  Save,
+  User,
+  Mail,
+  Shield,
+  Loader2,
+  Trash2,
+  FileText,
+  MessageSquare,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Edit3
+} from "lucide-react";
 import { api } from "../../services/api";
 
+interface Permit {
+  id: string | number;
+  permit_number?: string;
+  business_name?: string;
+  type?: string;
+  status: string;
+  created_at?: string;
+}
+
+interface Complaint {
+  id: string | number;
+  ticket_number?: string;
+  title?: string;
+  category?: string;
+  status: string;
+  created_at?: string;
+}
+
+const getProfilePictureUrl = (url?: string) => {
+  if (!url) return undefined;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `http://localhost:8000${url.startsWith("/") ? "" : "/"}${url}`;
+};
+
 export const Profile: React.FC = () => {
-  const {user, login} = useAuthStore();
+  const { user, login } = useAuthStore();
+  const [activeTab, setActiveTab] = useState<"profile" | "permits" | "complaints">("profile");
+  
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const isAuthenticatedUser = !!user;
+
+  // State Data Warga
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    phone: "081234567890",
-    nik: "3171234567890001",
-    address: "Jl. Contoh Alamat No. 123, RT 01/RW 02, Jakarta",
+    phone: (user as any)?.phone || "",
+    nik: (user as any)?.nik || "",
+    address: (user as any)?.address || "",
   });
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Simulate API call
+  // State Riwayat Data Real-time
+  const [permits, setPermits] = useState<Permit[]>([]);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // Helper Toast
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    setShowToast(true);
     setTimeout(() => {
-      alert("Profil berhasil diperbarui!");
+      setShowToast(false);
+    }, 3000);
+  };
+
+  // 1. Fetch Profile Detail
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        setIsLoadingProfile(true);
+        const res = await api.get("/users/me");
+        if (res.data) {
+          setFormData({
+            name: res.data.name || user?.name || "",
+            email: res.data.email || user?.email || "",
+            phone: res.data.phone || (user as any)?.phone || "",
+            nik: res.data.nik || (user as any)?.nik || "",
+            address: res.data.address || (user as any)?.address || "",
+          });
+        }
+      } catch (err) {
+        console.error("Gagal mengambil detail profil:", err);
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+
+    if (isAuthenticatedUser) {
+      fetchUserProfile();
+    }
+  }, [user, isAuthenticatedUser]);
+
+  // 2. Fetch Riwayat Perizinan & Pengaduan Khusus User Aktif
+  useEffect(() => {
+    const fetchUserHistory = async () => {
+      try {
+        setIsLoadingHistory(true);
+        
+        const [permitsRes, complaintsRes] = await Promise.allSettled([
+          api.get("/permits"),
+          api.get("/complaints/my-complaints"),
+        ]);
+
+        // Ambil langsung seluruh data perizinan dari database
+        if (permitsRes.status === "fulfilled" && Array.isArray(permitsRes.value.data)) {
+          setPermits(permitsRes.value.data);
+        }
+
+        // Ambil data pengaduan
+        if (complaintsRes.status === "fulfilled" && Array.isArray(complaintsRes.value.data)) {
+          setComplaints(complaintsRes.value.data);
+        }
+      } catch (err) {
+        console.error("Gagal mengambil riwayat aktivitas:", err);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    if (isAuthenticatedUser) {
+      fetchUserHistory();
+    }
+  }, [isAuthenticatedUser]);
+
+  // Save Profile ke Backend
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (formData.nik && formData.nik.length !== 16) {
+      alert("NIK harus terdiri dari 16 digit angka.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const payload = {
+        name: formData.name,
+        phone: formData.phone,
+        nik: formData.nik,
+        address: formData.address,
+      };
+
+      const res = await api.put("/users/me", payload);
+
+      if (user) {
+        login({ 
+          ...user, 
+          name: formData.name,
+          ...(res.data || payload)
+        });
+      }
+
+      triggerToast("Profil berhasil diperbarui!");
       setIsEditing(false);
-    }, 500);
+    } catch (err) {
+      console.error("Gagal memperbarui profil:", err);
+      triggerToast("Gagal memperbarui profil. Periksa koneksi backend.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,14 +189,13 @@ export const Profile: React.FC = () => {
       const res = await api.post("/users/profile-picture", formDataUpload, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      // Update local state user
       if (user) {
         login({ ...user, profile_picture: res.data.profile_picture });
       }
-      alert("Foto profil berhasil diperbarui!");
+      triggerToast("Foto profil berhasil diperbarui!");
     } catch (err) {
       console.error(err);
-      alert("Gagal mengunggah foto profil.");
+      triggerToast("Gagal mengunggah foto profil.");
     } finally {
       setIsUploading(false);
     }
@@ -59,211 +209,429 @@ export const Profile: React.FC = () => {
       if (user) {
         login({ ...user, profile_picture: undefined });
       }
-      alert("Foto profil berhasil dihapus!");
+      triggerToast("Foto profil berhasil dihapus!");
     } catch (err) {
       console.error(err);
-      alert("Gagal menghapus foto profil.");
+      triggerToast("Gagal menghapus foto profil.");
     } finally {
       setIsUploading(false);
     }
   };
 
+  // Badge Status Helper
+  const getStatusBadge = (status: string) => {
+    const statusUpper = (status || "").toUpperCase();
+    if (statusUpper === "APPROVED" || statusUpper === "DISETUJUI" || statusUpper === "SELESAI") {
+      return (
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+          <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> {status}
+        </span>
+      );
+    }
+    if (statusUpper === "REJECTED" || statusUpper === "DITOLAK") {
+      return (
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 shadow-sm">
+          <XCircle className="w-3.5 h-3.5 mr-1" /> {status}
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-sm">
+        <Clock className="w-3.5 h-3.5 mr-1" /> {status || "DIPROSES"}
+      </span>
+    );
+  };
+
   return (
-    <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-[#0f172a]">
-          Profil Pengguna
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Kelola informasi data diri dan akun Anda.
-        </p>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-8">
-        {/* Left Col - Photo & Quick Info */}
-        <div className="w-full md:w-1/3">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col items-center text-center">
-            <div className="flex flex-col items-center mb-6">
-              <div 
-                className="relative group cursor-pointer mb-3"
-                onClick={() => !isUploading && fileInputRef.current?.click()}
-              >
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                />
-                <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
-                  {user?.profile_picture ? (
-                    <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <User size={64} className="text-gray-400" />
-                  )}
-                </div>
-                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  {isUploading ? (
-                    <Loader2 className="text-white w-8 h-8 animate-spin" />
-                  ) : (
-                    <Camera className="text-white w-8 h-8" />
-                  )}
-                </div>
-              </div>
-              
-              {user?.profile_picture && (
-                <div className="flex space-x-3">
-                  <button 
-                    onClick={() => !isUploading && fileInputRef.current?.click()} 
-                    className="flex items-center text-xs font-semibold text-[#2563eb] hover:text-[#1d4ed8] bg-blue-50 px-3 py-1.5 rounded-full transition-colors"
-                  >
-                    <Camera className="w-3.5 h-3.5 mr-1.5" /> Ganti
-                  </button>
-                  <button 
-                    onClick={handleDeletePhoto}
-                    disabled={isUploading}
-                    className="flex items-center text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Hapus
-                  </button>
-                </div>
-              )}
+    <div className="min-h-screen bg-[#f8fafc] font-sans py-10 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      
+      {/* Floating Toast Notification Bergerak */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.8 }}
+            animate={{ 
+              opacity: 1, 
+              y: 0, 
+              scale: [1, 1.05, 1],
+              transition: { duration: 0.5, ease: "easeOut" }
+            }}
+            exit={{ opacity: 0, y: -20, scale: 0.9, transition: { duration: 0.3 } }}
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-slate-900/95 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl border border-emerald-500/30"
+          >
+            <motion.div
+              animate={{ rotate: [0, 15, -15, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+            >
+              <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+            </motion.div>
+            <div>
+              <p className="text-sm font-extrabold text-white">Berhasil!</p>
+              <p className="text-xs text-slate-300 font-medium">{toastMessage}</p>
             </div>
-            
-            <h2 className="text-xl font-bold text-[#0f172a]">
-              {formData.name}
-            </h2>
-            <p className="text-gray-500 font-medium">
-              {user?.role === "ADMIN" ? "Administrator" : "User"}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="max-w-6xl mx-auto">
+        
+        {/* Header Title & Navigation Tabs */}
+        <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+              Portal Pengguna & Profile
+            </h1>
+            <p className="text-slate-600 text-xs sm:text-sm font-medium mt-1">
+              Kelola data diri serta pantau status perizinan dan aduan Anda secara real-time.
             </p>
+          </div>
 
-            <div className="w-full border-t border-gray-100 mt-6 pt-6 space-y-4 text-left">
-              <div className="flex items-center text-sm text-gray-600">
-                <Mail className="w-4 h-4 mr-3 text-[#2563eb]" />
-                <span className="truncate">{formData.email}</span>
-              </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <Shield className="w-4 h-4 mr-3 text-green-600" />
-                <span>Akun Terverifikasi</span>
-              </div>
-            </div>
+          {/* Glassmorphic Tab Navigation */}
+          <div className="flex bg-white/80 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200/80 shadow-sm self-start lg:self-auto">
+            <button
+              onClick={() => setActiveTab("profile")}
+              className={`px-5 py-2.5 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
+                activeTab === "profile"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+              }`}
+            >
+              Profil
+            </button>
+            <button
+              onClick={() => setActiveTab("permits")}
+              className={`px-5 py-2.5 text-xs font-extrabold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === "permits"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+              }`}
+            >
+              <span>Perizinan</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === "permits" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
+                {permits.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab("complaints")}
+              className={`px-5 py-2.5 text-xs font-extrabold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === "complaints"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+              }`}
+            >
+              <span>Pengaduan</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === "complaints" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
+                {complaints.length}
+              </span>
+            </button>
           </div>
         </div>
 
-        {/* Right Col - Form */}
-        <div className="w-full md:w-2/3">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-              <h3 className="text-xl font-bold text-[#0f172a]">
-                Informasi Detail
-              </h3>
-              {!isEditing && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8] transition-colors"
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Left Column: Photo & User Summary Card */}
+          <div className="lg:col-span-1">
+            <div className="bg-white/90 backdrop-blur-md rounded-[2.5rem] border border-white/80 shadow-[0_10px_30px_rgba(0,0,0,0.04)] p-8 flex flex-col items-center text-center">
+              
+              <div className="flex flex-col items-center mb-6">
+                <div 
+                  className="relative group cursor-pointer mb-4"
+                  onClick={() => !isUploading && fileInputRef.current?.click()}
                 >
-                  Edit Profil
-                </button>
-              )}
-            </div>
-
-            <form onSubmit={handleSave} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Nama Lengkap
-                  </label>
                   <input
-                    type="text"
-                    value={formData.name}
-                    disabled={!isEditing}
-                    onChange={(e) =>
-                      setFormData({...formData, name: e.target.value})
-                    }
-                    className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#2563eb] focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 transition-all"
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Nomor Induk Kependudukan (NIK)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.nik}
-                    disabled={!isEditing}
-                    onChange={(e) =>
-                      setFormData({...formData, nik: e.target.value})
-                    }
-                    className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#2563eb] focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    disabled={true} // Email usually immutable or needs verification
-                    className="w-full p-3 rounded-lg border border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Nomor Telepon / WhatsApp
-                  </label>
-                  <div className="flex">
-                    <span className="inline-flex items-center px-4 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-                      +62
-                    </span>
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      disabled={!isEditing}
-                      onChange={(e) =>
-                        setFormData({...formData, phone: e.target.value})
-                      }
-                      className="flex-1 w-full p-3 rounded-r-lg border border-gray-300 focus:ring-2 focus:ring-[#2563eb] focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 transition-all"
-                    />
+                  <div className="w-32 h-32 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border-4 border-white shadow-xl">
+                    {user?.profile_picture ? (
+                      <img 
+                        src={getProfilePictureUrl(user.profile_picture)} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover" 
+                      />
+                    ) : (
+                      <User size={56} className="text-slate-400" />
+                    )}
+                  </div>
+                  <div className="absolute inset-0 bg-slate-900/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-xs">
+                    {isUploading ? (
+                      <Loader2 className="text-white w-8 h-8 animate-spin" />
+                    ) : (
+                      <Camera className="text-white w-8 h-8" />
+                    )}
                   </div>
                 </div>
+                
+                {user?.profile_picture && (
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={() => !isUploading && fileInputRef.current?.click()} 
+                      className="flex items-center text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+                    >
+                      <Camera className="w-3.5 h-3.5 mr-1.5" /> Ganti
+                    </button>
+                    <button 
+                      onClick={handleDeletePhoto}
+                      disabled={isUploading}
+                      className="flex items-center text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 px-3 py-1.5 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Hapus
+                    </button>
+                  </div>
+                )}
               </div>
+              
+              <h2 className="text-xl font-extrabold text-slate-900">
+                {formData.name || "Warga SIPEDI"}
+              </h2>
+              <p className="text-blue-600 font-extrabold text-[11px] uppercase tracking-wider bg-blue-50 px-3 py-1 rounded-full border border-blue-100 mt-2">
+                WARGA / PEMOHON
+              </p>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Alamat Domisili
-                </label>
-                <textarea
-                  rows={3}
-                  value={formData.address}
-                  disabled={!isEditing}
-                  onChange={(e) =>
-                    setFormData({...formData, address: e.target.value})
-                  }
-                  className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#2563eb] focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 transition-all"
-                ></textarea>
-              </div>
-
-              {isEditing && (
-                <div className="flex justify-end space-x-4 pt-4 border-t border-gray-100">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    className="px-6 py-2.5 rounded-lg font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 rounded-lg font-semibold text-white bg-[#2563eb] hover:bg-[#1d4ed8] transition-colors flex items-center"
-                  >
-                    <Save className="w-4 h-4 mr-2" /> Simpan Perubahan
-                  </button>
+              <div className="w-full border-t border-slate-100 mt-6 pt-6 space-y-4 text-left">
+                <div className="flex items-center text-xs font-medium text-slate-600 gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <span className="truncate">{formData.email}</span>
                 </div>
-              )}
-            </form>
+                <div className="flex items-center text-xs font-medium text-slate-600 gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                    <Shield className="w-4 h-4" />
+                  </div>
+                  <span className="font-bold text-emerald-700">Akun Terverifikasi</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Tab Content Details */}
+          <div className="lg:col-span-2">
+            
+            {/* TAB 1: FORM EDIT PROFIL */}
+            {activeTab === "profile" && (
+              <div className="bg-white/90 backdrop-blur-md rounded-[2.5rem] border border-white/80 shadow-[0_10px_30px_rgba(0,0,0,0.04)] p-8 sm:p-10">
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
+                  <div>
+                    <h3 className="text-xl font-extrabold text-slate-900">
+                      Informasi Detail Data Diri
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Kelola informasi identitas pribadi Anda untuk keperluan berkas perizinan
+                    </p>
+                  </div>
+                  {!isEditing && (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="inline-flex items-center gap-1.5 text-xs font-extrabold text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-xl border border-blue-100 transition-all cursor-pointer"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Edit Profil</span>
+                    </button>
+                  )}
+                </div>
+
+                {isLoadingProfile ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                  </div>
+                ) : (
+                  <form onSubmit={handleSave} className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                          Nama Lengkap
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.name}
+                          disabled={!isEditing}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500 transition-all"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                          Nomor Induk Kependudukan (NIK)
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={16}
+                          value={formData.nik}
+                          placeholder="3171xxxxxxxxxxxx"
+                          disabled={!isEditing}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '');
+                            setFormData({ ...formData, nik: val });
+                          }}
+                          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500 transition-all"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                          Alamat Email
+                        </label>
+                        <input
+                          type="email"
+                          value={formData.email}
+                          disabled={true}
+                          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 text-sm font-medium cursor-not-allowed"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                          Nomor Telepon / WhatsApp
+                        </label>
+                        <input
+                          type="tel"
+                          value={formData.phone}
+                          placeholder="081234567890"
+                          disabled={!isEditing}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                        Alamat Domisili
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={formData.address}
+                        placeholder="Masukkan alamat lengkap domisili Anda"
+                        disabled={!isEditing}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500 transition-all resize-none"
+                      ></textarea>
+                    </div>
+
+                    {isEditing && (
+                      <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditing(false)}
+                          className="px-6 py-3 rounded-xl font-extrabold text-xs text-slate-600 hover:bg-slate-100 transition-all cursor-pointer uppercase tracking-wider"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isSaving}
+                          className="px-8 py-3 rounded-xl font-extrabold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 uppercase tracking-wider"
+                        >
+                          {isSaving ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Save className="w-4 h-4" />
+                          )}
+                          <span>Simpan Perubahan</span>
+                        </button>
+                      </div>
+                    )}
+                  </form>
+                )}
+              </div>
+            )}
+
+            {/* TAB 2: RIWAYAT PERIZINAN */}
+            {activeTab === "permits" && (
+              <div className="bg-white/90 backdrop-blur-md rounded-[2.5rem] border border-white/80 shadow-[0_10px_30px_rgba(0,0,0,0.04)] p-8 sm:p-10">
+                <h3 className="text-xl font-extrabold text-slate-900 mb-6 pb-4 border-b border-slate-100 flex items-center">
+                  <FileText className="w-5 h-5 mr-2.5 text-blue-600" /> 
+                  Riwayat Permohonan Izin
+                </h3>
+
+                {isLoadingHistory ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                  </div>
+                ) : permits.length === 0 ? (
+                  <div className="text-center py-12 text-slate-500">
+                    <AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                    <h4 className="text-base font-bold text-slate-700">Belum Ada Permohonan Izin</h4>
+                    <p className="text-xs text-slate-400 mt-1">Seluruh pengajuan Surat Izin Usaha Mikro akan tercatat di sini.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {permits.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-5 border border-slate-200/80 rounded-2xl hover:border-blue-200 hover:bg-blue-50/30 transition-all flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white shadow-xs"
+                      >
+                        <div>
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">
+                            {item.permit_number || `PERMIT-${item.id}`}
+                          </span>
+                          <h4 className="text-base font-extrabold text-slate-900 mt-2">
+                            {item.business_name || item.type || "Izin Usaha Mikro (IUMK)"}
+                          </h4>
+                          <p className="text-xs text-slate-400 font-medium mt-1">
+                            Diajukan pada: {item.created_at ? new Date(item.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Baru Saja"}
+                          </p>
+                        </div>
+                        <div>{getStatusBadge(item.status)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 3: RIWAYAT PENGADUAN */}
+            {activeTab === "complaints" && (
+              <div className="bg-white/90 backdrop-blur-md rounded-[2.5rem] border border-white/80 shadow-[0_10px_30px_rgba(0,0,0,0.04)] p-8 sm:p-10">
+                <h3 className="text-xl font-extrabold text-slate-900 mb-6 pb-4 border-b border-slate-100 flex items-center">
+                  <MessageSquare className="w-5 h-5 mr-2.5 text-rose-600" /> 
+                  Riwayat Pengaduan Ketertiban
+                </h3>
+
+                {isLoadingHistory ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                  </div>
+                ) : complaints.length === 0 ? (
+                  <div className="text-center py-12 text-slate-500">
+                    <AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                    <h4 className="text-base font-bold text-slate-700">Belum Ada Pengaduan</h4>
+                    <p className="text-xs text-slate-400 mt-1">Laporan pengaduan ketertiban publik Anda akan muncul di sini.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {complaints.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-5 border border-slate-200/80 rounded-2xl hover:border-rose-200 hover:bg-rose-50/30 transition-all flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white shadow-xs"
+                      >
+                        <div>
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-600 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-100">
+                            {item.ticket_number || `ADUAN-${item.id}`}
+                          </span>
+                          <h4 className="text-base font-extrabold text-slate-900 mt-2">
+                            {item.title || item.category || "Laporan Pengaduan Ketertiban"}
+                          </h4>
+                          <p className="text-xs text-slate-400 font-medium mt-1">
+                            Dilaporkan pada: {item.created_at ? new Date(item.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Baru Saja"}
+                          </p>
+                        </div>
+                        <div>{getStatusBadge(item.status)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         </div>
+
       </div>
     </div>
   );

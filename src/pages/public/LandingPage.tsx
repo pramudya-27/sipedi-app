@@ -1,6 +1,6 @@
-import React from "react";
-import {useTranslation} from "react-i18next";
-import {Link} from "react-router-dom";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import {
   Search,
   FileText,
@@ -9,22 +9,58 @@ import {
   ArrowRight,
   Sparkles,
   Check,
-  ShieldCheck,
-  CheckCircle,
+  X,
+  Clock,
+  Loader2
 } from "lucide-react";
 import heroBg from "../../assets/city.jpg";
-import heroBg2 from "../../assets/market1.jpg";
+import heroBg2 from "../../assets/umkm.jpg";
+import bgGridTexture from "../../assets/bg2.jpg";
+import bgTexture3 from "../../assets/bg3.jpg";
 
 export const LandingPage: React.FC = () => {
-  const {t} = useTranslation();
+  const { t } = useTranslation();
+
+  // State khusus penanganan Lacak Status
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [trackedResult, setTrackedResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Handler Lacak Status ke Endpoint Real-time FastAPI
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) {
+      alert("Silakan masukkan nomor izin atau resi terlebih dahulu.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`http://localhost:8000/api/v1/track/${encodeURIComponent(searchQuery.trim())}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setTrackedResult(data);
+        setShowModal(true);
+      } else {
+        alert("Nomor resi / tiket tidak ditemukan. Pastikan format nomor sudah benar.");
+      }
+    } catch (error) {
+      console.error("Error fetching track status:", error);
+      alert("Gagal terhubung ke server backend.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
+    <div className="flex flex-col min-h-screen bg-[#f8fafc] font-sans relative">
       {/* 1. Hero Section */}
-      <section className="relative w-full h-[550px] flex items-center justify-center">
+      <section className="relative w-full h-[520px] flex items-center justify-center">
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-[#0f172a]/70 z-10"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0b1329]/85 via-[#0f172a]/80 to-[#0b1329]/95 z-10"></div>
           <img
             src={heroBg}
             alt="SIPEDI Layanan"
@@ -34,270 +70,365 @@ export const LandingPage: React.FC = () => {
 
         {/* Hero Content */}
         <div className="relative z-20 w-full max-w-4xl px-4 sm:px-6 flex flex-col items-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 text-center tracking-tight leading-tight">
+          <div className="inline-flex items-center space-x-2 bg-blue-500/10 border border-blue-400/30 backdrop-blur-md px-3.5 py-1.5 rounded-full mb-5">
+            <Sparkles className="w-4 h-4 text-blue-400" />
+            <span className="text-xs font-semibold text-blue-200 uppercase tracking-widest">
+              Sistem Perizinan & Ketertiban Digital
+            </span>
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 text-center tracking-tight leading-tight">
             Lacak Perizinan & Pengaduan Anda
           </h1>
-          <p className="text-lg text-gray-200 mb-8 text-center max-w-2xl">
+          <p className="text-sm md:text-base text-slate-300 mb-8 text-center max-w-2xl leading-relaxed">
             Sistem terintegrasi untuk memudahkan pelaku UMKM dalam mengurus
             perizinan dan melaporkan masalah ketertiban umum.
           </p>
 
-          <div className="bg-white/10 backdrop-blur-md p-2 rounded-xl shadow-2xl flex flex-col md:flex-row gap-2 w-full border border-white/20">
-            <div className="flex-grow relative flex items-center bg-white rounded-lg overflow-hidden">
+          {/* Form Lacak Status */}
+          <form
+            onSubmit={handleSearch}
+            className="bg-white/10 backdrop-blur-md p-2 rounded-2xl shadow-2xl flex flex-col md:flex-row gap-2 w-full border border-white/20"
+          >
+            <div className="flex-grow relative flex items-center bg-white/95 rounded-xl overflow-hidden shadow-inner">
               <Search
-                className="absolute left-4 text-gray-400 w-6 h-6"
-                strokeWidth={1.5}
+                className="absolute left-4 text-slate-400 w-5 h-5"
+                strokeWidth={2}
               />
               <input
                 type="text"
-                placeholder="Masukkan Nomor Izin atau Resi (Misal: IZIN-2026-X)"
-                className="w-full pl-12 pr-4 py-4 md:py-5 text-lg border-none focus:ring-2 focus:ring-[#2563eb] focus:outline-none text-gray-900 bg-transparent placeholder-gray-400 font-medium"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Masukkan Nomor Izin atau Resi (Misal: PRM-20261022-AE27EA6A)"
+                className="w-full pl-12 pr-4 py-3.5 md:py-4 text-sm md:text-base border-none focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 bg-transparent placeholder-slate-400 font-medium"
               />
             </div>
-            <button className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white px-10 py-4 md:py-5 font-bold text-lg rounded-lg transition-all w-full md:w-auto shadow-lg hover:shadow-xl">
-              Lacak Status
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-8 py-3.5 md:py-4 font-bold text-sm md:text-base rounded-xl transition-all w-full md:w-auto shadow-lg hover:shadow-blue-500/25 cursor-pointer flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Mencari...</span>
+                </>
+              ) : (
+                <span>Lacak Status</span>
+              )}
             </button>
+          </form>
+        </div>
+      </section>
+
+      {/* Modal Pop-Up Hasil Lacak Status Real-time */}
+      {showModal && trackedResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 border border-slate-100 shadow-2xl relative overflow-hidden">
+            
+            <button 
+              onClick={() => setShowModal(false)}
+              className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider mb-3">
+              <Clock className="w-3.5 h-3.5" />
+              <span>{trackedResult.type}</span>
+            </div>
+
+            <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+              Status Berkas: <span className="text-blue-600">{trackedResult.code}</span>
+            </h3>
+            
+            <p className="text-xs text-slate-500 font-medium mt-1 mb-6">
+              Pemohon: <span className="text-slate-800 font-bold">{trackedResult.applicant}</span> • {trackedResult.date}
+            </p>
+
+            {/* Timeline Progress Status Real-time */}
+            <div className="space-y-4 border-l-2 border-slate-100 pl-4 my-6">
+              {trackedResult.steps && trackedResult.steps.map((step: any, idx: number) => (
+                <div key={idx} className="relative flex items-start gap-3">
+                  <div className={`absolute -left-[25px] top-0.5 w-4 h-4 rounded-full flex items-center justify-center ${
+                    step.done ? 'bg-emerald-500 text-white' : step.active ? 'bg-blue-600 ring-4 ring-blue-100' : 'bg-slate-200'
+                  }`}>
+                    {step.done && <Check className="w-2.5 h-2.5" strokeWidth={3} />}
+                  </div>
+                  <div>
+                    <h4 className={`text-xs font-extrabold ${step.active ? 'text-blue-600' : step.done ? 'text-slate-900' : 'text-slate-400'}`}>
+                      {step.title}
+                    </h4>
+                    <p className="text-[11px] text-slate-500 font-medium mt-0.5">{step.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => setShowModal(false)}
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-md"
+              >
+                Tutup Pelacakan
+              </button>
+            </div>
+
           </div>
         </div>
-      </section>
+      )}
 
-      {/* 2. Quick Tools Grid (Contiguous 3-Cards) */}
-      <section className="relative z-30 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 mb-10 w-full">
-        <div className="bg-white rounded-xl shadow-xl flex flex-col md:flex-row border border-gray-100 overflow-hidden divide-y md:divide-y-0 md:divide-x divide-gray-100">
+      {/* 2. Interactive Animated Cards Section */}
+      <section className="relative z-30 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 mb-16 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          {/* Card 1: Buat Izin Usaha */}
           <Link
-            to="/permits/create"
-            className="flex-1 p-8 flex flex-col items-center justify-center text-center group hover:bg-blue-50 transition-colors"
+            to="/citizen/permits/create"
+            className="group relative bg-white rounded-3xl p-7 md:p-8 border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_rgba(37,99,235,0.12)] hover:-translate-y-2 transition-all duration-500 overflow-hidden flex flex-col justify-between"
           >
-            <div className="mb-5 bg-blue-100 p-4 rounded-full group-hover:scale-110 transition-transform duration-300">
-              <FileText className="w-8 h-8 text-[#2563eb]" strokeWidth={1.5} />
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-sky-100/80 rounded-full blur-2xl group-hover:scale-150 group-hover:bg-sky-200 transition-all duration-700 ease-out pointer-events-none"></div>
+            <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-blue-50 rounded-full blur-2xl group-hover:scale-125 group-hover:bg-blue-100 transition-all duration-700 ease-out pointer-events-none"></div>
+
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="w-13 h-13 rounded-2xl bg-sky-100/90 text-sky-600 flex items-center justify-center p-3 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                  <FileText className="w-6 h-6" strokeWidth={2} />
+                </div>
+                <span className="text-[10px] font-extrabold text-sky-700 bg-sky-100/80 border border-sky-200 px-3 py-1 rounded-full tracking-wider uppercase">
+                  Layanan NIB
+                </span>
+              </div>
+
+              <h3 className="text-slate-900 font-extrabold text-xl tracking-tight mb-2 group-hover:text-blue-600 transition-colors">
+                Buat Izin Usaha
+              </h3>
+              <p className="text-slate-500 text-xs md:text-sm leading-relaxed">
+                Ajukan perizinan NIB dan surat izin usaha mikro secara online tanpa biaya.
+              </p>
             </div>
-            <h3 className="text-[#0f172a] font-extrabold text-lg tracking-wide mb-2">
-              Buat Izin Usaha
-            </h3>
-            <p className="text-gray-500 text-sm">
-              Ajukan perizinan NIB dan surat usaha lainnya secara digital.
-            </p>
+
+            <div className="relative z-10 mt-8 pt-4 flex items-center text-xs font-bold text-sky-600 group-hover:text-blue-600 transition-colors">
+              <span>Mulai Pengajuan</span>
+              <ArrowRight size={15} className="ml-2 group-hover:translate-x-2 transition-transform duration-300" />
+            </div>
           </Link>
 
+          {/* Card 2: Lapor Ketertiban */}
           <Link
-            to="/complaints/create"
-            className="flex-1 p-8 flex flex-col items-center justify-center text-center group hover:bg-red-50 transition-colors"
+            to="/citizen/complaints/create"
+            className="group relative bg-white rounded-3xl p-7 md:p-8 border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_rgba(225,29,72,0.12)] hover:-translate-y-2 transition-all duration-500 overflow-hidden flex flex-col justify-between"
           >
-            <div className="mb-5 bg-red-100 p-4 rounded-full group-hover:scale-110 transition-transform duration-300">
-              <ShieldAlert className="w-8 h-8 text-red-600" strokeWidth={1.5} />
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-rose-100/80 rounded-full blur-2xl group-hover:scale-150 group-hover:bg-rose-200 transition-all duration-700 ease-out pointer-events-none"></div>
+            <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-red-50 rounded-full blur-2xl group-hover:scale-125 group-hover:bg-red-100 transition-all duration-700 ease-out pointer-events-none"></div>
+
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="w-13 h-13 rounded-2xl bg-rose-100/90 text-rose-600 flex items-center justify-center p-3 group-hover:scale-110 group-hover:bg-rose-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                  <ShieldAlert className="w-6 h-6" strokeWidth={2} />
+                </div>
+                <span className="text-[10px] font-extrabold text-rose-700 bg-rose-100/80 border border-rose-200 px-3 py-1 rounded-full tracking-wider uppercase">
+                  Siaga 24 Jam
+                </span>
+              </div>
+
+              <h3 className="text-slate-900 font-extrabold text-xl tracking-tight mb-2 group-hover:text-rose-600 transition-colors">
+                Lapor Ketertiban
+              </h3>
+              <p className="text-slate-500 text-xs md:text-sm leading-relaxed">
+                Sampaikan aduan pelanggaran ketertiban umum di lingkungan sekitar Anda secara cepat.
+              </p>
             </div>
-            <h3 className="text-[#0f172a] font-extrabold text-lg tracking-wide mb-2">
-              Lapor Ketertiban
-            </h3>
-            <p className="text-gray-500 text-sm">
-              Sampaikan aduan pelanggaran ketertiban umum di sekitar Anda.
-            </p>
+
+            <div className="relative z-10 mt-8 pt-4 flex items-center text-xs font-bold text-rose-600 group-hover:text-rose-700 transition-colors">
+              <span>Lapor Sekarang</span>
+              <ArrowRight size={15} className="ml-2 group-hover:translate-x-2 transition-transform duration-300" />
+            </div>
           </Link>
 
+          {/* Card 3: Tanya Asisten AI */}
           <Link
             to="/ai-assistant"
-            className="flex-1 p-8 flex flex-col items-center justify-center text-center group hover:bg-emerald-50 transition-colors"
+            className="group relative bg-white rounded-3xl p-7 md:p-8 border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_rgba(217,119,6,0.12)] hover:-translate-y-2 transition-all duration-500 overflow-hidden flex flex-col justify-between"
           >
-            <div className="mb-5 bg-emerald-100 p-4 rounded-full group-hover:scale-110 transition-transform duration-300">
-              <Bot className="w-8 h-8 text-emerald-600" strokeWidth={1.5} />
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-amber-100/80 rounded-full blur-2xl group-hover:scale-150 group-hover:bg-amber-200 transition-all duration-700 ease-out pointer-events-none"></div>
+            <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-yellow-50 rounded-full blur-2xl group-hover:scale-125 group-hover:bg-amber-100 transition-all duration-700 ease-out pointer-events-none"></div>
+
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="w-13 h-13 rounded-2xl bg-amber-100/90 text-amber-600 flex items-center justify-center p-3 group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-white transition-all duration-300 shadow-sm">
+                  <Bot className="w-6 h-6" strokeWidth={2} />
+                </div>
+                <span className="text-[10px] font-extrabold text-amber-800 bg-amber-100/80 border border-amber-200 px-3 py-1 rounded-full tracking-wider uppercase">
+                  Respon AI
+                </span>
+              </div>
+
+              <h3 className="text-slate-900 font-extrabold text-xl tracking-tight mb-2 group-hover:text-amber-600 transition-colors">
+                Tanya Asisten AI
+              </h3>
+              <p className="text-slate-500 text-xs md:text-sm leading-relaxed">
+                Dapatkan bantuan otomatis dan jawaban instan terkait prosedur serta persyaratan SIPEDI.
+              </p>
             </div>
-            <h3 className="text-[#0f172a] font-extrabold text-lg tracking-wide mb-2">
-              Tanya Asisten AI
-            </h3>
-            <p className="text-gray-500 text-sm">
-              Dapatkan panduan otomatis terkait prosedur dan layanan SIPEDI.
-            </p>
+
+            <div className="relative z-10 mt-8 pt-4 flex items-center text-xs font-bold text-amber-600 group-hover:text-amber-700 transition-colors">
+              <span>Mulai Diskusi</span>
+              <ArrowRight size={15} className="ml-2 group-hover:translate-x-2 transition-transform duration-300" />
+            </div>
           </Link>
+
         </div>
       </section>
 
-      {/* 3. Layanan Unggulan (Modern, Clean with Pure Transparent Waves) */}
-      <section className="py-24 relative overflow-hidden bg-transparent">
-        {/* Abstract Background Visuals */}
-        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden select-none">
-          {/* Pure Elegant Transparent Waves */}
-          <svg
-            className="absolute inset-0 w-full h-full pointer-events-none"
-            xmlns="http://www.w3.org/2000/svg"
-            preserveAspectRatio="none"
-            viewBox="0 0 1440 850"
-          >
-            <defs>
-              <linearGradient
-                id="waveFillGrad1"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="80%"
-              >
-                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.14" />
-                <stop offset="50%" stopColor="#6366f1" stopOpacity="0.09" />
-                <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0.03" />
-              </linearGradient>
-              <linearGradient
-                id="waveFillGrad2"
-                x1="100%"
-                y1="20%"
-                x2="0%"
-                y2="100%"
-              >
-                <stop offset="0%" stopColor="#2563eb" stopOpacity="0.12" />
-                <stop offset="60%" stopColor="#818cf8" stopOpacity="0.07" />
-                <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.02" />
-              </linearGradient>
-              <linearGradient
-                id="waveFillGrad3"
-                x1="0%"
-                y1="100%"
-                x2="100%"
-                y2="0%"
-              >
-                <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.08" />
-                <stop offset="100%" stopColor="#c084fc" stopOpacity="0.04" />
-              </linearGradient>
-            </defs>
+      {/* 3. Layanan Unggulan */}
+      <section className="py-20 relative overflow-hidden bg-[#f8fafc]">
+        <div
+          className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-35 mix-blend-multiply pointer-events-none"
+          style={{ backgroundImage: `url(${bgTexture3})` }}
+        ></div>
 
-            {/* Top Wave Layer 1 */}
-            <path
-              d="M0,70 C280,180 520,40 820,140 C1120,240 1280,90 1440,160 L1440,0 L0,0 Z"
-              fill="url(#waveFillGrad1)"
-            />
-
-            {/* Top Wave Layer 2 (Layered Depth) */}
-            <path
-              d="M0,120 C320,220 580,90 880,180 C1160,260 1320,130 1440,190 L1440,0 L0,0 Z"
-              fill="url(#waveFillGrad3)"
-            />
-
-            {/* Bottom Wave Layer 1 */}
-            <path
-              d="M0,580 C340,460 640,720 960,560 C1200,440 1340,510 1440,480 L1440,850 L0,850 Z"
-              fill="url(#waveFillGrad2)"
-            />
-
-            {/* Bottom Wave Layer 2 (Layered Depth) */}
-            <path
-              d="M0,630 C300,520 600,750 920,610 C1180,490 1300,540 1440,520 L1440,850 L0,850 Z"
-              fill="url(#waveFillGrad3)"
-            />
-          </svg>
-
-          {/* Soft Ambient Depth Glow */}
-          <div className="absolute top-1/4 -right-20 w-[450px] h-[450px] bg-gradient-to-bl from-blue-300/20 to-transparent rounded-full blur-[90px]"></div>
-          <div className="absolute bottom-1/4 -left-20 w-[500px] h-[500px] bg-gradient-to-tr from-indigo-300/18 via-sky-200/12 to-transparent rounded-full blur-[100px]"></div>
+        <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
+          <div className="absolute -top-24 -left-24 w-[35rem] h-[35rem] bg-sky-200/50 rounded-full blur-[120px] animate-pulse"></div>
+          <div className="absolute top-10 -right-20 w-[30rem] h-[30rem] bg-rose-200/40 rounded-full blur-[110px] animate-pulse delay-700"></div>
+          <div className="absolute -bottom-20 left-1/3 w-[32rem] h-[32rem] bg-amber-200/40 rounded-full blur-[130px] animate-pulse delay-1000"></div>
+          <div className="absolute -bottom-10 -right-10 w-[28rem] h-[28rem] bg-indigo-200/40 rounded-full blur-[100px]"></div>
         </div>
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16">
-            <span className="text-[#2563eb] font-bold tracking-wider uppercase text-sm">
+          <div className="text-center mb-12">
+            <span className="text-blue-600 font-extrabold tracking-wider uppercase text-xs bg-blue-50/90 border border-blue-200/80 px-3.5 py-1.5 rounded-full shadow-sm backdrop-blur-md">
               Layanan Unggulan
             </span>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-[#0f172a] mt-2">
+            <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900 mt-3.5 tracking-tight">
               Solusi Digital Terpadu UMKM
             </h2>
           </div>
 
-          <div className="flex flex-col md:flex-row items-stretch gap-8 mb-16">
-            <div className="w-full md:w-1/2 flex flex-col justify-center pr-0 md:pr-12">
-              <h3 className="text-3xl font-bold text-[#0f172a] mb-6 leading-tight">
+          <div className="flex flex-col md:flex-row items-center gap-10 lg:gap-14 mb-8">
+            <div className="w-full md:w-1/2 order-1 md:order-2">
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/80 group">
+                <img
+                  src={heroBg2}
+                  alt="Layanan Unggulan UMKM"
+                  className="w-full h-[260px] sm:h-[320px] md:h-[380px] object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                />
+              </div>
+            </div>
+
+            <div className="w-full md:w-1/2 flex flex-col justify-center order-2 md:order-1">
+              <h3 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-4 leading-tight">
                 Urus Perizinan Mikro Cepat & Tanpa Biaya
               </h3>
-              <p className="text-gray-600 text-lg mb-8 leading-relaxed">
+              <p className="text-slate-600 text-sm md:text-base mb-6 leading-relaxed font-medium">
                 Platform SIPEDI memberikan kemudahan bagi Anda selaku pelaku
                 UMKM untuk mendaftarkan usaha dan mendapatkan NIB atau surat
-                izin resmi.
+                izin resmi tanpa birokrasi yang rumit.
               </p>
-              <ul className="space-y-4 mb-8">
+
+              <ul className="space-y-3.5 mb-8">
                 <li className="flex items-start">
-                  <div className="w-6 h-6 rounded-md bg-blue-100/80 text-blue-600 flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
-                    <Check className="w-4 h-4" strokeWidth={2.5} />
+                  <div className="w-5 h-5 rounded-md bg-blue-100 text-blue-600 flex items-center justify-center mr-3 shrink-0 mt-0.5 shadow-sm">
+                    <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
                   </div>
-                  <span className="text-gray-700">
+                  <span className="text-xs md:text-sm text-slate-700 font-semibold">
                     Proses sepenuhnya digital tanpa perlu antre di kantor dinas.
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <div className="w-6 h-6 rounded-md bg-blue-100/80 text-blue-600 flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
-                    <Check className="w-4 h-4" strokeWidth={2.5} />
+                  <div className="w-5 h-5 rounded-md bg-blue-100 text-blue-600 flex items-center justify-center mr-3 shrink-0 mt-0.5 shadow-sm">
+                    <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
                   </div>
-                  <span className="text-gray-700">
-                    Dokumen legal dikirim langsung ke email Anda.
+                  <span className="text-xs md:text-sm text-slate-700 font-semibold">
+                    Dokumen legal diterbitkan secara resmi dan dikirim via email.
                   </span>
                 </li>
               </ul>
+
               <div>
                 <Link
-                  to="/permits"
-                  className="inline-flex items-center bg-[#0f172a] hover:bg-[#1e293b] text-white font-semibold py-3.5 px-8 rounded-lg transition-colors shadow-md hover:shadow-lg"
+                  to="/citizen/permits/create"
+                  className="inline-flex items-center bg-slate-900 hover:bg-blue-600 text-white text-xs md:text-sm font-bold py-3.5 px-7 rounded-2xl transition-all shadow-md hover:shadow-xl hover:scale-105"
                 >
-                  Mulai Pendaftaran{" "}
-                  <ArrowRight className="ml-2 w-5 h-5" strokeWidth={1.5} />
+                  Mulai Pendaftaran
+                  <ArrowRight className="ml-2 w-4 h-4" strokeWidth={2} />
                 </Link>
               </div>
-            </div>
-            <div className="w-full md:w-1/2 min-h-[350px] relative rounded-2xl overflow-hidden shadow-xl">
-              <img
-                src={heroBg2}
-                alt="Layanan Unggulan"
-                className="absolute inset-0 w-full h-full object-cover"
-              />
             </div>
           </div>
         </div>
       </section>
 
-        {/* 4. Bottom Info Banner (Layanan Terpadu) */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-20">
-          <div className="bg-[#020617] rounded-3xl p-8 lg:p-12 relative overflow-hidden border border-[#1e3a8a]/30 shadow-2xl shadow-[#1e3a8a]/10">
-            {/* Background Glow */}
-            <div className="absolute top-0 right-0 -mr-20 -mt-20 w-[40rem] h-[40rem] bg-gradient-to-br from-[#1e3a8a]/20 to-transparent rounded-full blur-[100px] pointer-events-none"></div>
-            
-            <div className="relative z-10">
-              <div className="text-center mb-10">
-                <h2 className="text-3xl font-extrabold text-white tracking-tight mb-4">Layanan Terpadu <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">SIPEDI</span></h2>
-                <p className="text-slate-400 max-w-2xl mx-auto">Akses cepat ke layanan utama kami. Kami berkomitmen memberikan pelayanan prima, transparan, dan bebas pungutan liar.</p>
+      {/* 4. Bottom Info Banner */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 mb-20 w-full">
+        <div className="bg-gradient-to-br from-blue-50 via-slate-50/90 to-indigo-50/80 rounded-3xl p-8 lg:p-12 relative overflow-hidden border border-blue-100 shadow-[0_15px_40px_rgba(37,99,235,0.08)]">
+          <div
+            className="absolute inset-0 opacity-25 mix-blend-multiply pointer-events-none bg-repeat bg-center"
+            style={{ backgroundImage: `url(${bgGridTexture})` }}
+          ></div>
+
+          <div className="relative z-10">
+            <div className="text-center mb-10">
+              <span className="text-blue-600 font-extrabold tracking-wider uppercase text-xs bg-blue-100/80 px-3.5 py-1.5 rounded-full border border-blue-200/80 shadow-sm">
+                Akses Terpadu
+              </span>
+              <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mt-3 mb-3">
+                Layanan Terpadu <span className="text-blue-600">SIPEDI</span>
+              </h2>
+              <p className="text-xs md:text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed">
+                Akses cepat ke seluruh kanal utama kami. SIPEDI berkomitmen memberikan pelayanan prima, transparan, dan 100% bebas dari pungutan liar.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Card 1: Perizinan Mikro */}
+              <div className="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl p-6 hover:border-blue-400 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-4 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-base font-extrabold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">Perizinan Mikro</h3>
+                  <p className="text-xs text-slate-500 mb-6 leading-relaxed">Pengajuan Izin Usaha Mikro (IUMK) dan Nomor Induk Berusaha (NIB) dengan proses cepat.</p>
+                </div>
+                <Link to="/citizen/permits/create" className="text-xs font-bold text-blue-600 group-hover:text-blue-700 inline-flex items-center pt-2 border-t border-slate-100">
+                  <span>Ajukan Sekarang</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-1.5 transition-transform" />
+                </Link>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Perizinan Card */}
-                <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 hover:border-blue-500/50 transition-colors group">
-                  <div className="w-12 h-12 rounded-xl bg-blue-900/30 flex items-center justify-center mb-4 group-hover:bg-blue-900/50 transition-colors">
-                    <FileText className="w-6 h-6 text-blue-400" />
+              {/* Card 2: Pengaduan Ketertiban */}
+              <div className="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl p-6 hover:border-rose-400 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center mb-4 text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-all shadow-sm">
+                    <ShieldAlert className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">Perizinan Mikro</h3>
-                  <p className="text-sm text-slate-400 mb-4">Pengajuan Izin Usaha Mikro (IUMK) dan Nomor Induk Berusaha (NIB) dengan proses cepat.</p>
-                  <Link to="/permits" className="text-sm font-semibold text-blue-400 hover:text-blue-300 inline-flex items-center">
-                    Ajukan Sekarang <ArrowRight className="w-4 h-4 ml-1" />
-                  </Link>
+                  <h3 className="text-base font-extrabold text-slate-900 mb-2 group-hover:text-rose-600 transition-colors">Pengaduan Ketertiban</h3>
+                  <p className="text-xs text-slate-500 mb-6 leading-relaxed">Layanan pelaporan pelanggaran ketertiban umum dan aduan masyarakat secara langsung.</p>
                 </div>
+                <Link to="/citizen/complaints/create" className="text-xs font-bold text-rose-600 group-hover:text-rose-700 inline-flex items-center pt-2 border-t border-slate-100">
+                  <span>Buat Laporan</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-1.5 transition-transform" />
+                </Link>
+              </div>
 
-                {/* Pengaduan Card */}
-                <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 hover:border-emerald-500/50 transition-colors group">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-900/30 flex items-center justify-center mb-4 group-hover:bg-emerald-900/50 transition-colors">
-                    <ShieldCheck className="w-6 h-6 text-emerald-400" />
+              {/* Card 3: Cek Status */}
+              <div className="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl p-6 hover:border-emerald-400 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-4 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
+                    <Search className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">Pengaduan Ketertiban</h3>
-                  <p className="text-sm text-slate-400 mb-4">Layanan pelaporan pelanggaran ketertiban umum dan aduan masyarakat sekitar.</p>
-                  <Link to="/complaints" className="text-sm font-semibold text-emerald-400 hover:text-emerald-300 inline-flex items-center">
-                    Buat Laporan <ArrowRight className="w-4 h-4 ml-1" />
-                  </Link>
+                  <h3 className="text-base font-extrabold text-slate-900 mb-2 group-hover:text-emerald-600 transition-colors">Cek Status</h3>
+                  <p className="text-xs text-slate-500 mb-6 leading-relaxed">Pantau perkembangan berkas perizinan atau tindak lanjut pengaduan Anda secara real-time.</p>
                 </div>
-
-                {/* Cek Status Card */}
-                <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 hover:border-indigo-500/50 transition-colors group">
-                  <div className="w-12 h-12 rounded-xl bg-indigo-900/30 flex items-center justify-center mb-4 group-hover:bg-indigo-900/50 transition-colors">
-                    <Search className="w-6 h-6 text-indigo-400" />
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-2">Cek Status</h3>
-                  <p className="text-sm text-slate-400 mb-4">Pantau perkembangan berkas perizinan atau tindak lanjut pengaduan Anda secara real-time.</p>
-                  <Link to="/dashboard" className="text-sm font-semibold text-indigo-400 hover:text-indigo-300 inline-flex items-center">
-                    Lihat Dashboard <ArrowRight className="w-4 h-4 ml-1" />
-                  </Link>
-                </div>
+                <Link to="/citizen/profile" className="text-xs font-bold text-emerald-600 group-hover:text-emerald-700 inline-flex items-center pt-2 border-t border-slate-100">
+                  <span>Lihat Status Saya</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-1.5 transition-transform" />
+                </Link>
               </div>
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
+    </div>
   );
 };
