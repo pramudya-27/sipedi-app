@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Enum, DateTime, ForeignKey, Text
+from sqlalchemy import Column, String, Enum, DateTime, ForeignKey, Integer, Text
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -11,8 +11,13 @@ class Permit(Base):
     permit_number = Column(String(100), unique=True, index=True, nullable=False)
     type = Column(String(100), nullable=False)
     business_name = Column(String(150), nullable=False)
+    business_address = Column(Text, nullable=True)
     applicant_id = Column(String(36), ForeignKey('users.id'), nullable=False)
     status = Column(Enum('Draft', 'Submitted', 'Under Verification', 'Revision Required', 'Approved', 'Rejected', name='permit_status'), default='Draft')
+    rejection_reason = Column(Text, nullable=True)
+    approved_at = Column(DateTime, nullable=True)
+    expired_at = Column(DateTime, nullable=True)
+    issued_by = Column(String(36), nullable=True)
     submission_date = Column(DateTime, default=datetime.utcnow)
     last_update = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -24,8 +29,14 @@ class PermitDocument(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     permit_id = Column(String(36), ForeignKey('permits.id'), nullable=False)
+    file_name = Column(String(255), nullable=True)
     document_type = Column(String(100), nullable=False)
     file_path = Column(String(255), nullable=False)
+    file_size = Column(Integer, nullable=True)
+    mime_type = Column(String(100), nullable=True)
+    status = Column(String(50), default='PENDING')
+    rejection_reason = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     permit = relationship('Permit', back_populates='documents')
-
