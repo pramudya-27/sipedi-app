@@ -10,7 +10,9 @@ export const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const login = useAuthStore(state => state.login);
+  
+  // login dan logout dari store Zustand
+  const { login, logout } = useAuthStore();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -19,9 +21,36 @@ export const Login: React.FC = () => {
     setLoading(true);
     
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const formData = new URLSearchParams();
+      formData.append('username', email); 
+      formData.append('password', password);
+
+      let response;
+      try {
+        response = await api.post('/auth/login', formData, {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+      } catch (firstErr) {
+       
+        response = await api.post('/auth/login', { email, password });
+      }
+
       const { access_token, user } = response.data;
       
+      const userRoleUpper = user?.role?.toUpperCase();
+
+      // STRICT ISOLATION
+      if (userRoleUpper === 'ADMIN' || userRoleUpper === 'ADMINISTRATOR') {
+        setError('Akses ditolak. Akun Administrator wajib masuk melalui Portal Admin khusus (/admin/login).');
+        setLoading(false);
+        return;
+      }
+
+      // Auto-Logout Single Session
+      logout();
+      localStorage.removeItem('token');
+
+      // Simpan session Warga baru
       localStorage.setItem('token', access_token);
       
       login({
@@ -32,9 +61,23 @@ export const Login: React.FC = () => {
         profile_picture: user.profile_picture
       });
 
-      navigate('/');
+      navigate('/citizen/profile');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Email atau password salah. Silakan periksa kembali.');
+      console.error('Login Error:', err);
+
+
+      if (err.response && err.response.data && err.response.data.detail) {
+        if (typeof err.response.data.detail === 'string') {
+          setError(err.response.data.detail);
+        } else if (Array.isArray(err.response.data.detail)) {
+       
+          setError(err.response.data.detail[0]?.msg || 'Format input tidak valid.');
+        } else {
+          setError('Email atau kata sandi salah. Silakan periksa kembali.');
+        }
+      } else {
+        setError('Email atau kata sandi salah, atau server backend tidak terjangkau.');
+      }
     } finally {
       setLoading(false);
     }
@@ -87,7 +130,7 @@ export const Login: React.FC = () => {
           <img src={logo} alt="SIPEDI Logo" className="h-16 w-auto drop-shadow-sm" />
         </div>
         <h1 className="mt-6 text-3xl font-extrabold text-slate-900 tracking-tight">
-          Portal Masuk SIPEDI
+          Portal Masuk Warga
         </h1>
         <p className="mt-2 text-sm text-slate-500">
           Belum memiliki akun?{' '}
@@ -115,6 +158,7 @@ export const Login: React.FC = () => {
                 id="email"
                 type="email"
                 required
+                autoComplete="username"
                 className="w-full px-4 py-3 rounded-xl border border-slate-200/80 bg-white/90 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-500 transition-all placeholder:text-slate-400 shadow-sm"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -138,6 +182,7 @@ export const Login: React.FC = () => {
                 id="password"
                 type="password"
                 required
+                autoComplete="current-password"
                 className="w-full px-4 py-3 rounded-xl border border-slate-200/80 bg-white/90 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-500 transition-all placeholder:text-slate-400 shadow-sm"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -152,7 +197,7 @@ export const Login: React.FC = () => {
                 className="w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 disabled:opacity-50 transition-all shadow-md shadow-blue-600/20 cursor-pointer"
               >
                 <LogIn className="w-4 h-4" strokeWidth={2} />
-                {loading ? 'Memproses Masuk...' : 'Masuk ke Akun'}
+                {loading ? 'Memproses Masuk...' : 'Masuk ke Akun Warga'}
               </button>
             </div>
           </form>
