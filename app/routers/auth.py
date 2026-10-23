@@ -21,13 +21,24 @@ from app.schemas.user import (
 )
 from app.services.email_service import send_password_reset_email
 
-router = APIRouter(prefix='/api/auth', tags=['Auth'])
+router = APIRouter(tags=['Auth'])
 
 @router.post('/login', response_model=Token)
 def login(user_data: UserLogin, db: Session = Depends(get_db)):
+    
     user = db.query(User).filter(User.email == user_data.email).first()
-    if not user or not verify_password(user_data.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Incorrect email or password')
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail='Email tidak terdaftar di sistem.'
+        )
+    
+    # 2. Cek kebenaran password
+    if not verify_password(user_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail='Kata sandi yang Anda masukkan salah.'
+        )
     
     access_token = create_access_token(data={'sub': user.email, 'role': user.role})
     return {'access_token': access_token, 'token_type': 'bearer', 'user': user}
@@ -60,6 +71,37 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 @router.get('/me', response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+# === TAMBAHAN AMAN: Endpoint update profil warga (PUT /api/v1/auth/me atau PUT /users/me) ===
+@router.put('/me', response_model=UserResponse)
+def update_me(
+    data: dict, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        user = db.query(User).filter(User.id == current_user.id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Pengguna tidak ditemukan.")
+
+        if "name" in data and data["name"]:
+            user.name = data["name"]
+        if "phone" in data and hasattr(user, 'phone'):
+            user.phone = data["phone"]
+        if "nik" in data and hasattr(user, 'nik'):
+            user.nik = data["nik"]
+        if "address" in data and hasattr(user, 'address'):
+            user.address = data["address"]
+
+        db.commit()
+        db.refresh(user)
+        return user
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Gagal memperbarui profil: {str(e)}"
+        )
 
 @router.post('/forgot-password')
 def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
@@ -117,4 +159,3 @@ def reset_password(req: ResetPasswordRequest, db: Session = Depends(get_db)):
     return {
         "message": "Kata sandi Anda berhasil diperbarui. Silakan masuk menggunakan kata sandi baru Anda."
     }
-
