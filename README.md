@@ -85,34 +85,48 @@
 ## ✨ 4. Fitur-Fitur Utama
 
 ### 1. Pelayanan Perizinan Usaha Mikro (IUMK & NIB)
-- **Formulir Interaktif & Validasi Ketat NIK**: NIK divalidasi 16 digit angka dan aturan *One Citizen One Active Permit* untuk mencegah kepemilikan ganda tak terkontrol.
-- **Pilihan Durasi Fleksibel**: 1 Bulan, 3 Bulan, 6 Bulan, dan 12 Bulan dengan transparansi tarif retribusi (Rp 50.000 kebersihan + Rp 50.000 keamanan per bulan).
-- **Integrasi Pembayaran Otomatis**: Saat formulir dikirim, sistem langsung menerbitkan nomor tagihan (`INV-YYYYMMDD-XXXXXX`) dan mengarahkan warga ke Midtrans Snap.
-- **Penerbitan Surat Izin PDF Otomatis**: Ketika admin menyetujui, sistem secara otomatis menghasilkan dokumen PDF legal dengan tanda tangan digital dan QR Code verifikasi.
-- **Perpanjangan Izin (Renewal)**: Warga dapat memperpanjang izin sebelum atau sesudah kedaluwarsa secara instan.
+- **Formulir Interaktif & Validasi Ketat NIK**: NIK divalidasi 16 digit angka dengan pengecekan real-time dan aturan *One Citizen One Active Permit* untuk mencegah kepemilikan ganda tak terkontrol.
+- **Skema Durasi & Biaya Transparan**:
+  - **1 Bulan (Uji Coba / Trial Gratis - Rp 0)**: Dikhususkan bagi UMKM pemula. Bebas biaya retribusi di awal, status langsung `Submitted`, berkas langsung masuk ke antrean verifikasi Admin tanpa perlu pembayaran awal.
+  - **Pilihan Berbayar Dimuka (3, 6, dan 12 Bulan)**: Tarif resmi Rp 100.000 / bulan (Rp 50.000 Iuran Kebersihan + Rp 50.000 Iuran Ketertiban & Keamanan). Berstatus `Pending Payment` dan secara otomatis dialihkan ke gateway Midtrans Snap untuk pembayaran QRIS / Virtual Account.
+- **Sistem Perpanjangan Izin Kedaluwarsa (*Renewal*) dengan ID Surat yang Sama**:
+  - Ketika masa berlaku habis (*Expired*)—baik dari izin awal Trial 1 Bulan maupun izin berbayar—Admin dapat membuat tagihan perpanjangan 1 bulan (Rp 100.000) melalui Portal Admin.
+  - Sistem otomatis mengirimkan **Email C (Tagihan Perpanjangan)** ke email pemohon melalui Brevo dengan tombol tautan pembayaran Midtrans.
+  - Pemohon juga dapat memperpanjang secara mandiri melalui Profil Warga atau halaman Lacak Publik.
+  - Setelah pembayaran lunas diverifikasi:
+    - Nomor registrasi dan ID perizinan **tetap sama persis** (`PRM-YYYYMMDD-XXXXXX`), dengan nomor versi dokumen meningkat (`active_version: 2, 3, dst.`).
+    - Masa berlaku izin (`expired_at`) otomatis diperpanjang 1 bulan dari tanggal kedaluwarsa.
+    - Sistem menerbitkan Surat Izin PDF versi baru (`SURAT_IZIN_RESMI_{permit_number}_v{version}.pdf`) dan otomatis mengirimkan **Email D (Konfirmasi Perpanjangan Berhasil)** beserta lampiran PDF surat izin terbaru.
+- **Penerbitan Surat Izin PDF Ber-QR Code**: Ketika admin menyetujui, sistem secara otomatis menghasilkan dokumen PDF legal dengan tanda tangan elektronik dan QR Code verifikasi keabsahan.
 
-### 2. Layanan Pengaduan Ketertiban & Saber Pungli
+### 2. Arsitektur Hyper-Speed (< 2-4 Detik) & Background Tasks
+- **Asynchronous Background Processing**: Operasi berat seperti upload dokumen ke Cloudinary CDN, render PDF ReportLab, pencatatan audit log, dan notifikasi dipindahkan ke **FastAPI Background Tasks**.
+- **1x Atomic Database Commit**: Menggabungkan pembuatan entitas permohonan, dokumen, dan invoice dalam satu kali commit database cloud untuk mengeliminasi latensi jaringan SSL Aiven MySQL.
+- **Ketahanan Jaringan Seluler (Timeout 60s & 90s)**: Timeout Axios diatur ke 60.000 ms global dan 90.000 ms khusus pengajuan berkas agar permohonan warga di jaringan seluler lambat tetap terkirim dengan andal tanpa kegagalan timeout.
+
+### 3. Layanan Pengaduan Ketertiban & Saber Pungli
 - **Form Pelaporan Lengkap**: Mendukung kategori Pungutan Liar (Pungli), Pelanggaran Ketertiban Umum, Kerusakan Fasilitas, dan Premanisme.
 - **Unggah Bukti Lapangan**: Foto atau berkas bukti langsung disimpan secara aman di Cloudinary CDN.
 - **Sistem Disposisi Petugas**: Admin dapat menugaskan petugas lapangan (*officer dispatch*) untuk meninjau lokasi dengan batas waktu penanganan.
 - **Pelacakan Tiket Real-time**: Warga dapat memantau status aduan (`Baru` -> `Sedang Diproses` -> `Selesai`) menggunakan kode tiket tanpa perlu login.
 
-### 3. Asisten AI Cerdas (Bilingual AI Assistant)
+### 4. Asisten AI Cerdas (Bilingual AI Assistant)
 - **Didukung Model LLM Generasi Baru**: Terintegrasi via OpenRouter API untuk menjawab pertanyaan seputar hukum dan syarat UMKM.
 - **Tindakan Cepat (Quick Actions)**: Memiliki shortcut instan untuk *"Syarat IUMK"*, *"Lapor Pungli"*, dan *"Panduan Retribusi"*.
 - **Widget Chat Mengambang & Halaman Mandiri**: Dapat diakses di pojok kanan bawah seluruh halaman atau melalui menu `/ai-assistant`.
 
-### 4. Sistem Pembayaran & Tagihan (Midtrans Snap & QRIS)
+### 5. Sistem Pembayaran & Tagihan (Midtrans Snap & QRIS)
 - **Metode Pembayaran Lengkap**: QRIS, E-Wallet (GoPay, ShopeePay), dan Virtual Account (BCA, BNI, BRI, Permata).
 - **Callback & Redirect Dinamis**: Mengalihkan pembayar kembali ke `https://sipedi.daimyo-lab.me/payment/finish` dengan ringkasan status otomatis.
-- **Webhook Notifikasi Real-time**: Webhook `POST /api/payments/midtrans-notification` memvalidasi signature SHA-512 dari server Midtrans untuk memperbarui status transaksi secara otonom.
+- **Webhook Notifikasi Real-time**: Webhook `POST /api/payments/midtrans-webhook` memvalidasi signature SHA-512 dari server Midtrans untuk memperbarui status transaksi secara otonom.
+- **Simulasi Sandbox Otomatis**: Dilengkapi endpoint `POST /api/payments/simulate-pay` untuk menguji pelunasan secara instan saat presentasi/penilaian dewan juri.
 
-### 5. Multi-Domain Routing Cerdas
+### 6. Multi-Domain Routing Cerdas
 - Menggunakan deteksi hostname di *React Router*:
   - Mengakses `admin.daimyo-lab.me` -> Masuk ke **Portal Pengawas/Admin** (bebas dari navigasi warga).
   - Mengakses `sipedi.daimyo-lab.me` -> Masuk ke **Portal Publik/Warga**.
 
-### 6. Desain Visual Modern (Transisi Bergaya Danantara)
+### 7. Desain Visual Modern (Transisi Bergaya Danantara)
 - **Scroll-Triggered Reveals**: Elemen teks, kartu, dan gambar meluncur muncul dengan kurva *cubic-bezier* halus (`framer-motion`) saat halaman digulir ke bawah.
 - **Animasi Metrik Utama**: Bar indikator dampak publik (1,250+ izin terbit, 99.2% selesai, <24 jam verifikasi).
 - **Favicon & Identitas Resmi**: Menggunakan ikon logo resmi SIPEDI pada seluruh tab peramban.
@@ -222,21 +236,22 @@ Berikut adalah ringkasan endpoint RESTful API backend:
 ### Perizinan Usaha (`/api/permits`)
 | Method | Endpoint | Deskripsi |
 |---|---|---|
-| `POST` | `/api/permits` | Mengajukan izin usaha baru, otomatis menerbitkan tagihan Midtrans. |
-| `GET`  | `/api/permits` | Mengambil daftar perizinan (mendukung filter pencarian & status). |
-| `GET`  | `/api/permits/{id}` | Mengambil detail lengkap izin beserta dokumen dan tagihannya. |
-| `PATCH`| `/api/permits/{id}/status` | Admin: Menyetujui/menolak izin serta menerbitkan sertifikat PDF. |
-| `POST` | `/api/permits/{id}/request-renewal` | Warga: Mengajukan perpanjangan durasi izin usaha. |
+| `POST` | `/api/permits` | Mengajukan izin usaha baru (Trial 1 Bulan bebas biaya langsung masuk verifikasi, atau 3/6/12 bulan otomatis menerbitkan tagihan Midtrans Snap). |
+| `GET`  | `/api/permits` | Mengambil daftar perizinan (mendukung filter pencarian, status, dan role). |
+| `GET`  | `/api/permits/my-permits` | Mengambil daftar perizinan khusus pemohon yang sedang login. |
+| `GET`  | `/api/permits/{id}` | Mengambil detail lengkap izin beserta dokumen dan riwayat tagihannya. |
+| `PATCH`| `/api/permits/{id}/status` | Admin: Menyetujui/menolak izin serta menerbitkan sertifikat PDF & kirim Email B. |
+| `POST` | `/api/permits/{id}/request-renewal` | Admin/Warga: Mengajukan perpanjangan durasi izin usaha (ID surat tetap sama) & kirim Email C. |
 | `GET`  | `/api/permits/{permit_number}/download-pdf` | Mengunduh Surat Keputusan Izin Resmi berformat PDF. |
 | `GET`  | `/api/permits/check-nik?nik=...` | Memeriksa ketersediaan NIK sebelum pengajuan. |
 
 ### Pembayaran & Midtrans (`/api/payments`)
 | Method | Endpoint | Deskripsi |
 |---|---|---|
-| `GET`  | `/api/payments/invoices/{order_id}` | Mengambil data tagihan dan status pelunasan. |
-| `POST` | `/api/payments/midtrans-notification` | **Webhook**: Menerima callback notifikasi pembayaran resmi dari Midtrans. |
-| `GET`  | `/api/payments/verify/{order_id}` | Memverifikasi status pembayaran langsung ke server Midtrans. |
-| `POST` | `/api/payments/simulate/{order_id}` | Mode Sandbox: Simulasi pelunasan pembayaran instan untuk pengujian. |
+| `GET`  | `/api/payments/invoice/{invoice_number}` | Mengambil data tagihan, rincian biaya, dan status pelunasan. |
+| `POST` | `/api/payments/midtrans-webhook` | **Webhook**: Menerima callback notifikasi pembayaran resmi dari Midtrans (verifikasi signature SHA-512 & idempotency). |
+| `GET`  | `/api/payments/verify/{order_id}` | Memverifikasi status pembayaran langsung ke server Midtrans API. |
+| `POST` | `/api/payments/simulate-pay` | Mode Sandbox: Simulasi pelunasan pembayaran instan untuk pengujian tanpa portal manual. |
 
 ### Pengaduan Ketertiban (`/api/complaints`)
 | Method | Endpoint | Deskripsi |

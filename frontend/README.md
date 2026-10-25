@@ -9,17 +9,23 @@ Frontend modern berbasis **React 19**, **TypeScript**, **Vite**, **Tailwind CSS*
 1. **Multi-Domain Routing**:
    * Domain `sipedi.daimyo-lab.me` otomatis membuka Portal Publik & Layanan Warga.
    * Domain `admin.daimyo-lab.me` otomatis membuka Landing Page khusus Pengawas dan Dashboard Admin terisolasi.
-2. **Animasi Transisi Halus (Gaya Danantara)**:
+2. **Formulir Izin Cerdas (Trial 1 Bulan Gratis vs Berbayar)**:
+   * **1 Bulan (Uji Coba / Trial Gratis - Rp 0)**: Dikhususkan bagi UMKM pemula. Bebas retribusi di awal, tanpa tagihan Midtrans, pengajuan langsung dikirim ke antrean verifikasi admin.
+   * **Pilihan Berbayar Dimuka (3, 6, 12 Bulan)**: Rincian tarif transparan (Iuran Kebersihan & Keamanan), otomatis mengarahkan ke portal pembayaran resmi Midtrans Snap.
+   * Dilengkapi kotak ringkasan tarif dan petunjuk perpanjangan real-time.
+3. **Perpanjangan Izin (*Renewal*) Mandiri**:
+   * Tombol perpanjang izin terintegrasi di Profil Warga (`/citizen/profile`), Admin Portal (`/admin/permits`), dan Halaman Lacak Publik (`/track/:code`).
+   * Menggunakan nomor registrasi dan ID surat izin yang sama.
+4. **Animasi Transisi Halus (Gaya Danantara)**:
    * Menggunakan Framer Motion dengan kurva *cubic-bezier* halus untuk animasi kemunculan elemen saat di-*scroll* (*scroll-triggered inView reveal*).
    * Animasi metrik dampak publik dan efek visual kartu modern.
-3. **Internasionalisasi (i18n)**:
+5. **Internasionalisasi (i18n)**:
    * Dukungan penuh dwibahasa (*Bahasa Indonesia* & *English*) menggunakan `react-i18next`.
-4. **Integrasi Pembayaran Otomatis**:
-   * Mengalihkan permohonan izin langsung ke portal pembayaran resmi Midtrans Snap (QRIS, VA Bank, E-Wallet).
-   * Halaman penyelesaian pembayaran pintar (`PaymentFinishPage`) yang memvalidasi parameter callback transaksi secara otomatis.
-5. **Asisten AI Mengambang**:
+6. **Ketahanan Jaringan Tinggi**:
+   * Konfigurasi Axios timeout 60 detik (global) dan 90 detik (pengajuan perizinan) untuk keandalan maksimal di jaringan seluler.
+7. **Asisten AI Mengambang**:
    * Widget chat asisten hukum dan regulasi UMKM yang dapat dipanggil dari seluruh halaman.
-6. **Grafik & Metrik Eksekutif**:
+8. **Grafik & Metrik Eksekutif**:
    * Menggunakan `Recharts` untuk menampilkan tren bulanan pengaduan dan distribusi kategori layanan.
 
 ---
