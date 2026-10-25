@@ -409,8 +409,13 @@ async def create_permit(
         req_duration = int(data.get('duration_months') or data.get('duration') or 1)
         filtered_data['duration_months'] = req_duration
 
-        # Status awal: Pending Payment (wajib bayar retribusi resmi sebelum masuk verifikasi admin)
-        filtered_data['status'] = 'Pending Payment'
+        # Status awal:
+        # Jika durasi 1 bulan: Trial Gratis -> status 'Submitted' (langsung antrean verifikasi admin)
+        # Jika durasi > 1 bulan: Berbayar -> status 'Pending Payment' (wajib bayar retribusi Midtrans di awal)
+        if req_duration == 1:
+            filtered_data['status'] = 'Submitted'
+        else:
+            filtered_data['status'] = 'Pending Payment'
 
         # Tanggal mulai
         req_start_date = data.get('start_date')
@@ -518,62 +523,65 @@ async def create_permit(
 
         permit_num = new_permit.permit_number
 
-        # 3. Buat Invoice Retribusi QRIS untuk seluruh permohonan izin (termasuk 1 bulan)
-        rate_kebersihan = 50000.0 * req_duration
-        rate_keamanan = 50000.0 * req_duration
-        total_amount = rate_kebersihan + rate_keamanan
+        # 3. Buat Invoice Retribusi QRIS HANYA untuk permohonan berbayar (> 1 bulan)
+        # Durasi 1 bulan adalah GRATIS / TRIAL sehingga tidak dikenakan invoice awal
+        new_invoice = None
+        if req_duration > 1:
+            rate_kebersihan = 50000.0 * req_duration
+            rate_keamanan = 50000.0 * req_duration
+            total_amount = rate_kebersihan + rate_keamanan
 
-        invoice_num = f"INV-{datetime.utcnow().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
-        due_date = datetime.utcnow() + relativedelta(days=3)
+            invoice_num = f"INV-{datetime.utcnow().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+            due_date = datetime.utcnow() + relativedelta(days=3)
 
-        snap_res = create_snap_transaction(
-            order_id=invoice_num,
-            gross_amount=total_amount,
-            customer_details={
-                "first_name": new_permit.applicant_name or "Pemohon SIPEDI",
-                "email": new_permit.email,
-                "phone": new_permit.phone or "08123456789"
-            },
-            item_details=[
-                {"id": "RET-KEBERSIHAN", "price": 50000, "quantity": req_duration, "name": f"Retribusi Kebersihan ({req_duration} Bulan)"},
-                {"id": "RET-KEAMANAN", "price": 50000, "quantity": req_duration, "name": f"Retribusi Keamanan ({req_duration} Bulan)"}
-            ]
-        )
+            snap_res = create_snap_transaction(
+                order_id=invoice_num,
+                gross_amount=total_amount,
+                customer_details={
+                    "first_name": new_permit.applicant_name or "Pemohon SIPEDI",
+                    "email": new_permit.email,
+                    "phone": new_permit.phone or "08123456789"
+                },
+                item_details=[
+                    {"id": "RET-KEBERSIHAN", "price": 50000, "quantity": req_duration, "name": f"Retribusi Kebersihan ({req_duration} Bulan)"},
+                    {"id": "RET-KEAMANAN", "price": 50000, "quantity": req_duration, "name": f"Retribusi Keamanan ({req_duration} Bulan)"}
+                ]
+            )
 
-        new_invoice = Invoice(
-            id=str(uuid.uuid4()),
-            invoice_number=invoice_num,
-            permit_id=new_permit.id,
-            renewal_id=None,
-            user_id=new_permit.applicant_id,
-            subtotal=total_amount,
-            total_amount=total_amount,
-            status="UNPAID",
-            due_date=due_date,
-            payment_method="QRIS",
-            snap_token=snap_res.get("token"),
-            snap_redirect_url=snap_res.get("redirect_url"),
-            qris_url=snap_res.get("qris_url") or snap_res.get("redirect_url")
-        )
-        db.add(new_invoice)
+            new_invoice = Invoice(
+                id=str(uuid.uuid4()),
+                invoice_number=invoice_num,
+                permit_id=new_permit.id,
+                renewal_id=None,
+                user_id=new_permit.applicant_id,
+                subtotal=total_amount,
+                total_amount=total_amount,
+                status="UNPAID",
+                due_date=due_date,
+                payment_method="QRIS",
+                snap_token=snap_res.get("token"),
+                snap_redirect_url=snap_res.get("redirect_url"),
+                qris_url=snap_res.get("qris_url") or snap_res.get("redirect_url")
+            )
+            db.add(new_invoice)
 
-        item1 = InvoiceItem(
-            id=str(uuid.uuid4()),
-            invoice_id=new_invoice.id,
-            item_name=f"Iuran Retribusi Kebersihan ({req_duration} Bulan)",
-            quantity=req_duration,
-            unit_price=50000.0,
-            subtotal=rate_kebersihan
-        )
-        item2 = InvoiceItem(
-            id=str(uuid.uuid4()),
-            invoice_id=new_invoice.id,
-            item_name=f"Iuran Retribusi Ketertiban & Keamanan ({req_duration} Bulan)",
-            quantity=req_duration,
-            unit_price=50000.0,
-            subtotal=rate_keamanan
-        )
-        db.add_all([item1, item2])
+            item1 = InvoiceItem(
+                id=str(uuid.uuid4()),
+                invoice_id=new_invoice.id,
+                item_name=f"Iuran Retribusi Kebersihan ({req_duration} Bulan)",
+                quantity=req_duration,
+                unit_price=50000.0,
+                subtotal=rate_kebersihan
+            )
+            item2 = InvoiceItem(
+                id=str(uuid.uuid4()),
+                invoice_id=new_invoice.id,
+                item_name=f"Iuran Retribusi Ketertiban & Keamanan ({req_duration} Bulan)",
+                quantity=req_duration,
+                unit_price=50000.0,
+                subtotal=rate_keamanan
+            )
+            db.add_all([item1, item2])
 
         # SINGLE ATOMIC COMMIT UNTUK SEMUA ENTITAS (menghemat 5x roundtrip ke cloud DB)
         db.commit()
@@ -582,7 +590,9 @@ async def create_permit(
         background_tasks.add_task(bg_post_permit_creation_tasks, str(new_permit.applicant_id), permit_num)
         for doc_id, file_bytes in files_for_cloud_bg:
             background_tasks.add_task(bg_upload_permit_document_to_cloudinary, doc_id, file_bytes)
-        background_tasks.add_task(bg_generate_invoice_pdf, new_invoice.id, new_permit.id)
+        
+        if new_invoice:
+            background_tasks.add_task(bg_generate_invoice_pdf, new_invoice.id, new_permit.id)
 
         return serialize_permit(new_permit, db, preloaded_invoice=new_invoice, preloaded_docs=created_docs)
 

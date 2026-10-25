@@ -171,8 +171,8 @@ export const CreatePermit: React.FC = () => {
         }, 1200);
       } else {
         setToastContent({
-          title: t('permits.toastSavedTitle', 'Pengajuan Berhasil Dikirim'),
-          desc: t('permits.toastSavedDesc', 'Data permohonan izin Anda telah dicatat.')
+          title: "Permohonan Berhasil Dikirim (Trial 1 Bulan Gratis)",
+          desc: "Permohonan izin uji coba 1 bulan bebas biaya berhasil diajukan dan sedang menunggu verifikasi petugas."
         });
         setShowToast(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -504,11 +504,36 @@ export const CreatePermit: React.FC = () => {
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200/80 bg-white/90 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-500 transition-all shadow-sm scroll-mt-28"
                   >
-                    <option value={1}>1 Bulan (Retribusi Resmi - Rp 100.000)</option>
-                    <option value={3}>3 Bulan (Retribusi Resmi)</option>
-                    <option value={6}>6 Bulan (Retribusi Resmi)</option>
-                    <option value={12}>12 Bulan (1 Tahun Penuh)</option>
+                    <option value={1}>1 Bulan (Uji Coba / Trial Gratis - Rp 0)</option>
+                    <option value={3}>3 Bulan (Retribusi Resmi - Rp 300.000)</option>
+                    <option value={6}>6 Bulan (Retribusi Resmi - Rp 600.000)</option>
+                    <option value={12}>12 Bulan / 1 Tahun Penuh (Retribusi Resmi - Rp 1.200.000)</option>
                   </select>
+
+                  {/* Penjelasan Transparan Tarif / Trial */}
+                  {Number(formData.durationMonths) === 1 ? (
+                    <div className="p-3.5 mt-2 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-900 flex items-start gap-2.5 text-xs shadow-sm">
+                      <Sparkles className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                      <div>
+                        <span className="font-extrabold text-emerald-900 block mb-0.5">Masa Uji Coba Gratis (Trial 1 Bulan - Rp 0)</span>
+                        <p className="text-emerald-700 leading-relaxed text-[11.5px]">
+                          Pengajuan izin 1 bulan pertama bebas biaya retribusi (uji coba). Berkas Anda langsung dikirim ke antrean verifikasi petugas tanpa perlu pembayaran di awal. Tagihan perpanjangan retribusi (Rp 100.000/bln) baru akan dikirimkan oleh Admin melalui email saat masa berlaku izin 1 bulan ini berakhir.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3.5 mt-2 rounded-xl bg-blue-50 border border-blue-200/80 text-blue-900 flex items-start gap-2.5 text-xs shadow-sm">
+                      <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                      <div>
+                        <span className="font-extrabold text-blue-900 block mb-0.5">
+                          Total Retribusi Resmi Dimuka: Rp {(Number(formData.durationMonths) * 100000).toLocaleString('id-ID')} ({formData.durationMonths} Bulan)
+                        </span>
+                        <p className="text-blue-700 leading-relaxed text-[11.5px]">
+                          Terdiri dari Iuran Kebersihan Rp {(Number(formData.durationMonths) * 50000).toLocaleString('id-ID')} & Ketertiban Rp {(Number(formData.durationMonths) * 50000).toLocaleString('id-ID')}. Setelah formulir dikirim, Anda akan langsung dialihkan ke portal pembayaran Midtrans.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
