@@ -108,6 +108,77 @@ export const FloatingAIChat: React.FC = () => {
     );
   };
 
+
+  // Mesin Respon Pengetahuan Lokal Cerdas (Zero-Downtime Knowledge Engine)
+  const getLocalSmartResponse = (query: string): { text: string; actionCard?: { link: string; title: string; buttonText: string } } => {
+    const q = query.toLowerCase().trim();
+
+    if (q.includes('warung') || q.includes('izin') || q.includes('iumk') || q.includes('sku') || q.includes('nib') || q.includes('usaha') || q.includes('restoran') || q.includes('toko') || q.includes('kuliner') || q.includes('dagang')) {
+      return {
+        text: `Untuk membuka atau melegalkan usaha mikro Anda, Anda dapat langsung mengajukan **Izin Usaha Mikro (IUMK)** secara online 100% melalui portal SIPEDI ini tanpa perlu datang fisik ke dinas.\n\n✨ **Ketentuan & Keuntungan di SIPEDI:**\n* **Trial 1 Bulan Gratis (Rp 0)**: Pengajuan izin 1 bulan pertama bebas biaya retribusi untuk membantu pelaku usaha baru. Berkas langsung masuk ke antrean verifikasi.\n* **Pilihan Berbayar Dimuka (3, 6, 12 Bulan)**: Dikenakan retribusi resmi (Rp 50.000 kebersihan + Rp 50.000 keamanan/bulan) yang dapat dibayar melalui QRIS Midtrans.\n* **Surat Izin Resmi Ber-QR Code**: Dokumen izin resmi berformat PDF langsung terbit setelah disetujui.\n* **Syarat Mudah**: Cukup siapkan NIK KTP (16 digit), data nama usaha, alamat, dan foto tempat usaha.\n\n[ACTION: /citizen/permits/create | Pengajuan Izin Usaha Mikro | Mulai Pengajuan Izin]`,
+        actionCard: {
+          link: '/citizen/permits/create',
+          title: 'Pengajuan Izin Usaha Mikro (IUMK)',
+          buttonText: 'Mulai Pengajuan Izin'
+        }
+      };
+    }
+
+    if (q.includes('pungli') || q.includes('lapor') || q.includes('aduan') || q.includes('pengaduan') || q.includes('rusak') || q.includes('jalan') || q.includes('lampu') || q.includes('parkir') || q.includes('preman') || q.includes('sampah')) {
+      return {
+        text: `Jika Anda menemukan indikasi pungutan liar (pungli), gangguan ketertiban umum, atau kerusakan fasilitas publik, laporkan segera melalui portal pengaduan resmi SIPEDI.\n\n🛡️ **Keunggulan Layanan Pengaduan SIPEDI:**\n* **Identitas Terlindungi**: Data pelapor terjamin kerahasiaannya secara sistem.\n* **Bukti Lapangan Digital**: Anda dapat melampirkan foto bukti kejadian langsung dari ponsel Anda.\n* **Disposisi Petugas**: Laporan Anda langsung diteruskan ke petugas penegak ketertiban untuk ditindaklanjuti secara cepat.\n* **Pemantauan Real-time**: Pantau proses penanganan dari awal hingga selesai menggunakan nomor tiket pengaduan.\n\n[ACTION: /citizen/complaints/create | Kanal Pengaduan & Lapor Pungli | Buat Laporan Pengaduan]`,
+        actionCard: {
+          link: '/citizen/complaints/create',
+          title: 'Kanal Pengaduan & Lapor Pungli',
+          buttonText: 'Buat Laporan Pengaduan'
+        }
+      };
+    }
+
+    if (q.includes('status') || q.includes('lacak') || q.includes('cek') || q.includes('track') || q.includes('riwayat') || q.includes('nomor')) {
+      return {
+        text: `Anda dapat memeriksa status permohonan perizinan maupun laporan pengaduan Anda secara real-time di website SIPEDI.\n\n🔍 **Cara Cek Status:**\n1. Jika Anda sudah login, buka menu **Daftar Izin** atau **Daftar Pengaduan** di dashboard profil Anda.\n2. Jika Anda memiliki kode registrasi (misal: \`PRM-...\` atau \`CMP-...\`), Anda juga dapat mengeceknya langsung melalui fitur Lacak Publik di halaman Beranda.\n\n[ACTION: /citizen/permits | Riwayat & Status Permohonan | Cek Status Sekarang]`,
+        actionCard: {
+          link: '/citizen/permits',
+          title: 'Riwayat & Status Permohonan',
+          buttonText: 'Cek Status Sekarang'
+        }
+      };
+    }
+
+    if (q.includes('perpanjang') || q.includes('renewal') || q.includes('expired') || q.includes('habis')) {
+      return {
+        text: `Perpanjangan izin operasional yang masa berlakunya telah habis dapat dilakukan secara instan:\n\n🔄 **Alur Perpanjangan Izin:**\n* Nomor registrasi dan ID izin Anda **tetap sama** (tidak perlu mendaftar ulang dari awal).\n* Versi dokumen izin akan otomatis diperbarui (\`v2\`, \`v3\`, dst.).\n* Admin dapat mengirimkan tagihan perpanjangan (Rp 100.000/bln) via email pemohon dengan link pembayaran Midtrans Snap.\n* Setelah diverifikasi lunas, surat izin resmi versi terbaru akan otomatis dikirimkan ke email Anda.\n\n[ACTION: /citizen/permits | Perpanjangan Izin Usaha | Buka Menu Izin Saya]`,
+        actionCard: {
+          link: '/citizen/permits',
+          title: 'Perpanjangan Izin Usaha',
+          buttonText: 'Buka Menu Izin Saya'
+        }
+      };
+    }
+
+    if (q.includes('bantuan') || q.includes('kontak') || q.includes('hubungi') || q.includes('cs') || q.includes('call') || q.includes('admin') || q.includes('telepon')) {
+      return {
+        text: `Tim Layanan Terpadu SIPEDI siap membantu Anda jika memerlukan panduan teknis maupun kendala seputar perizinan dan pengaduan.\n\n📞 Anda dapat mengirimkan pesan langsung ke pusat operasional kami melalui menu **Pusat Bantuan**.\n\n[ACTION: /contact | Pusat Bantuan & Kontak Petugas | Hubungi Petugas]`,
+        actionCard: {
+          link: '/contact',
+          title: 'Pusat Bantuan & Kontak Petugas',
+          buttonText: 'Hubungi Petugas'
+        }
+      };
+    }
+
+    // Respon salam / umum
+    return {
+      text: `Halo! 👋 Saya adalah **Asisten AI Resmi SIPEDI** (Sistem Perizinan & Ketertiban Digital).\n\nSaya siap memandu Anda mengurus kebutuhan layanan publik secara 100% online di website ini:\n\n1. 🏪 **Pengajuan Izin Usaha Mikro (IUMK)**: Nikmati masa uji coba **Trial 1 Bulan Gratis (Rp 0)** atau pilih durasi 3, 6, dan 12 bulan.\n2. 📢 **Pengaduan Ketertiban & Lapor Pungli**: Laporkan gangguan ketertiban atau pungutan liar dengan bukti foto.\n3. 🔍 **Lacak Status & Perpanjangan**: Pantau proses verifikasi izin dan perpanjangan secara otomatis.\n\nAda yang bisa saya bantu jelaskan lebih lanjut?\n\n[ACTION: /citizen/permits/create | Layanan Perizinan Digital | Mulai Pengajuan Izin]`,
+      actionCard: {
+        link: '/citizen/permits/create',
+        title: 'Layanan Perizinan Digital',
+        buttonText: 'Mulai Pengajuan Izin'
+      }
+    };
+  };
+
   const handleSend = async (forcedText?: string) => {
     const queryToSend = forcedText || input;
     if (!queryToSend.trim() || isTyping) return;
@@ -117,51 +188,69 @@ export const FloatingAIChat: React.FC = () => {
     setInput('');
     setIsTyping(true);
 
-    try {
-      const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-      if (!apiKey) {
-        throw new Error('API Key AI belum diset di .env (VITE_OPENROUTER_API_KEY)');
-      }
+    let rawAiText = '';
+    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
 
-      const chatHistory = messages.slice(-8).map((msg) => ({
+    // Daftar model OpenRouter yang mendukung Free Tier (Bebas Biaya / Kuota Gratis)
+    const candidateModels = [
+      'nvidia/nemotron-3.5-lightning:free',
+      'google/gemma-4-31b-it:free',
+      'liquid/lfm-2.5-2.6b:free',
+      'openai/gpt-4o-mini'
+    ];
+
+    if (apiKey) {
+      const chatHistory = messages.slice(-6).map((msg) => ({
         role: msg.type === 'user' ? 'user' : 'assistant',
         content: msg.text,
       }));
 
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'SIPEDI AI Assistant',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'openai/gpt-4o-mini',
-          max_tokens: 800,
-          messages: [
-            {
-              role: 'system',
-              content: SIPEDI_SYSTEM_PROMPT,
+      for (const model of candidateModels) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 9000);
+
+          const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            signal: controller.signal,
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              'HTTP-Referer': window.location.origin,
+              'X-Title': 'SIPEDI AI Assistant',
+              'Content-Type': 'application/json',
             },
-            ...chatHistory,
-            { role: 'user', content: queryToSend },
-          ],
-        }),
-      });
+            body: JSON.stringify({
+              model: model,
+              max_tokens: 800,
+              messages: [
+                { role: 'system', content: SIPEDI_SYSTEM_PROMPT },
+                ...chatHistory,
+                { role: 'user', content: queryToSend },
+              ],
+            }),
+          });
+          clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        throw new Error(`Gagal memproses (Kode: ${response.status})`);
+          if (response.ok) {
+            const data = await response.json();
+            const textContent = data.choices?.[0]?.message?.content;
+            if (textContent && textContent.trim()) {
+              rawAiText = textContent;
+              break; // Berhasil, hentikan loop
+            }
+          }
+        } catch (callErr) {
+          console.warn(`Model ${model} tidak merespons, beralih ke cadangan berikutnya...`, callErr);
+        }
       }
+    }
 
-      const data = await response.json();
-      const rawAiText =
-        data.choices?.[0]?.message?.content ||
-        'Maaf, saya tidak dapat memproses jawaban saat ini. Silakan coba kembali.';
+    // Jika seluruh model eksternal gagal / kuota habis, gunakan local smart engine (0% downtime)
+    let cleanAiText = '';
+    let actionCard: any = undefined;
 
-      let cleanAiText = rawAiText;
-      let actionCard = undefined;
-
+    if (rawAiText && rawAiText.trim()) {
+      cleanAiText = rawAiText;
       const actionTagRegex = /\[ACTION:\s*([^|\]]+)\s*\|\s*([^|\]]+)\s*\|\s*([^\]]+)\]/i;
       const match = cleanAiText.match(actionTagRegex);
 
@@ -174,99 +263,33 @@ export const FloatingAIChat: React.FC = () => {
         };
       } else {
         const lowerText = (queryToSend + ' ' + cleanAiText).toLowerCase();
-        if (
-          lowerText.includes('status izin') ||
-          lowerText.includes('riwayat izin') ||
-          lowerText.includes('cek izin') ||
-          lowerText.includes('lacak izin') ||
-          lowerText.includes('daftar izin') ||
-          lowerText.includes('permit status')
-        ) {
-          actionCard = {
-            title: t('aiAssistant.actionPermitHistory'),
-            link: '/citizen/permits',
-            buttonText: t('aiAssistant.actionPermitListBtn'),
-          };
-        } else if (
-          lowerText.includes('status aduan') ||
-          lowerText.includes('riwayat pengaduan') ||
-          lowerText.includes('lacak aduan') ||
-          lowerText.includes('cek aduan') ||
-          lowerText.includes('daftar pengaduan') ||
-          lowerText.includes('complaint status')
-        ) {
-          actionCard = {
-            title: t('aiAssistant.actionComplaintHistory'),
-            link: '/citizen/complaints',
-            buttonText: t('aiAssistant.actionComplaintListBtn'),
-          };
-        } else if (
-          lowerText.includes('warung') ||
-          lowerInputIncludesPermit(lowerText)
-        ) {
+        if (lowerText.includes('warung') || lowerInputIncludesPermit(lowerText)) {
           actionCard = {
             title: t('aiAssistant.actionCreatePermit'),
             link: '/citizen/permits/create',
             buttonText: t('aiAssistant.actionCreatePermitBtn'),
           };
-        } else if (
-          lowerText.includes('pungli') ||
-          lowerText.includes('lapor') ||
-          lowerText.includes('aduan') ||
-          lowerText.includes('pengaduan') ||
-          lowerText.includes('jalan rusak') ||
-          lowerText.includes('lampu mati') ||
-          lowerText.includes('parkir liar') ||
-          lowerText.includes('complaint')
-        ) {
+        } else if (lowerText.includes('pungli') || lowerText.includes('lapor') || lowerText.includes('aduan')) {
           actionCard = {
             title: t('aiAssistant.actionCreateComplaint'),
             link: '/citizen/complaints/create',
             buttonText: t('aiAssistant.actionCreateComplaintBtn'),
           };
-        } else if (
-          lowerText.includes('kontak') ||
-          lowerText.includes('hubungi') ||
-          lowerText.includes('bantuan') ||
-          lowerText.includes('contact') ||
-          lowerText.includes('cs')
-        ) {
-          actionCard = {
-            title: t('aiAssistant.actionContact'),
-            link: '/contact',
-            buttonText: t('aiAssistant.actionContactBtn'),
-          };
-        } else if (
-          lowerText.includes('profil') ||
-          lowerText.includes('profile') ||
-          lowerText.includes('ganti password') ||
-          lowerText.includes('foto profil')
-        ) {
-          actionCard = {
-            title: t('aiAssistant.actionProfile'),
-            link: '/citizen/profile',
-            buttonText: t('aiAssistant.actionProfileBtn'),
-          };
         }
       }
-
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now() + 1, type: 'ai', text: cleanAiText, actionCard },
-      ]);
-    } catch (err: any) {
-      console.error('Chat AI Error:', err);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          type: 'ai',
-          text: `⚠️ Kendala koneksi ke server AI: ${err.message || 'Silakan coba lagi.'}`,
-        },
-      ]);
-    } finally {
-      setIsTyping(false);
+    } else {
+      const fallback = getLocalSmartResponse(queryToSend);
+      cleanAiText = fallback.text;
+      actionCard = fallback.actionCard;
+      const actionTagRegex = /\[ACTION:\s*([^|\]]+)\s*\|\s*([^|\]]+)\s*\|\s*([^\]]+)\]/i;
+      cleanAiText = cleanAiText.replace(actionTagRegex, '').trim();
     }
+
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now() + 1, type: 'ai', text: cleanAiText, actionCard },
+    ]);
+    setIsTyping(false);
   };
 
   const handleReset = () => {
