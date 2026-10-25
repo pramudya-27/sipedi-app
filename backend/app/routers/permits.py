@@ -44,7 +44,7 @@ class RenewalRequestModel(BaseModel):
     duration_months: int = 1
     notes: Optional[str] = None
 
-def serialize_permit(p: Permit, db: Session) -> dict:
+def serialize_permit(p: Permit, db: Session, preloaded_invoice: Any = None, preloaded_docs: Any = None) -> dict:
     applicant_name = getattr(p, 'applicant_name', '') or "Pemohon"
     applicant_nik = getattr(p, 'nik', '') or ""
     applicant_phone = getattr(p, 'phone', '') or ""
@@ -53,8 +53,8 @@ def serialize_permit(p: Permit, db: Session) -> dict:
     user_obj = None
     if hasattr(p, 'applicant') and p.applicant:
         user_obj = p.applicant
-    else:
-        user_obj = db.query(User).filter(User.id == str(p.applicant_id)).first() if getattr(p, 'applicant_id', None) else None
+    elif getattr(p, 'applicant_id', None):
+        user_obj = db.query(User).filter(User.id == str(p.applicant_id)).first()
 
     if user_obj:
         if not applicant_name or applicant_name == "Pemohon":
@@ -79,7 +79,11 @@ def serialize_permit(p: Permit, db: Session) -> dict:
         sub_date = str(p.created_at)
 
     docs_list = []
-    docs = db.query(PermitDocument).filter(PermitDocument.permit_id == str(p.id)).all()
+    if preloaded_docs is not None:
+        docs = preloaded_docs
+    else:
+        docs = db.query(PermitDocument).filter(PermitDocument.permit_id == str(p.id)).all()
+
     for doc in docs:
         file_path = getattr(doc, 'file_path', '') or ''
         if file_path.startswith('/http://') or file_path.startswith('/https://'):
@@ -97,26 +101,30 @@ def serialize_permit(p: Permit, db: Session) -> dict:
             "status": getattr(doc, 'status', 'PENDING')
         })
 
-    # Ambil riwayat perpanjangan
-    renewals = db.query(PermitRenewal).filter(PermitRenewal.permit_id == str(p.id)).order_by(PermitRenewal.created_at.desc()).all()
     renewal_list = []
-    for r in renewals:
-        inv = db.query(Invoice).filter(Invoice.renewal_id == str(r.id)).first()
-        renewal_list.append({
-            "id": str(r.id),
-            "renewal_number": r.renewal_number,
-            "duration_months": r.duration_months,
-            "status": r.status,
-            "previous_expired_at": str(r.previous_expired_at) if r.previous_expired_at else None,
-            "new_expired_at": str(r.new_expired_at) if r.new_expired_at else None,
-            "created_at": str(r.created_at),
-            "invoice_number": inv.invoice_number if inv else None,
-            "invoice_status": inv.status if inv else None,
-            "total_amount": float(inv.total_amount) if inv and inv.total_amount else 100000
-        })
+    if preloaded_invoice is not None:
+        latest_inv = preloaded_invoice
+    else:
+        # Ambil riwayat perpanjangan
+        renewals = db.query(PermitRenewal).filter(PermitRenewal.permit_id == str(p.id)).order_by(PermitRenewal.created_at.desc()).all()
+        for r in renewals:
+            inv = db.query(Invoice).filter(Invoice.renewal_id == str(r.id)).first()
+            renewal_list.append({
+                "id": str(r.id),
+                "renewal_number": r.renewal_number,
+                "duration_months": r.duration_months,
+                "status": r.status,
+                "previous_expired_at": str(r.previous_expired_at) if r.previous_expired_at else None,
+                "new_expired_at": str(r.new_expired_at) if r.new_expired_at else None,
+                "created_at": str(r.created_at),
+                "invoice_number": inv.invoice_number if inv else None,
+                "invoice_status": inv.status if inv else None,
+                "total_amount": float(inv.total_amount) if inv and inv.total_amount else 100000
+            })
 
-    # Ambil invoice pending terakhir
-    latest_inv = db.query(Invoice).filter(Invoice.permit_id == str(p.id)).order_by(Invoice.created_at.desc()).first()
+        # Ambil invoice pending terakhir
+        latest_inv = db.query(Invoice).filter(Invoice.permit_id == str(p.id)).order_by(Invoice.created_at.desc()).first()
+
     latest_inv_data = None
     if latest_inv:
         latest_inv_data = {
@@ -302,6 +310,33 @@ def bg_generate_invoice_pdf(invoice_id: str, permit_id: str):
     except Exception as e:
         print(f"[BG TASK WARNING] Invoice PDF generation for {invoice_id}: {e}")
 
+def bg_post_permit_creation_tasks(user_id: str, permit_num: str):
+    try:
+        from app.core.database import SessionLocal
+        bg_db = SessionLocal()
+        try:
+            log_activity(
+                db=bg_db,
+                action="CREATE_PERMIT_APPLICATION",
+                module="PERMITS",
+                user_id=user_id,
+                role="CITIZEN",
+                reference=permit_num,
+                status="SUCCESS"
+            )
+            create_notification(
+                db=bg_db,
+                user_id=user_id,
+                title="Permohonan Izin Baru",
+                message=f"Permohonan izin baru ({permit_num}) telah berhasil diajukan dan sedang menunggu verifikasi.",
+                type="PERMIT_STATUS",
+                link_url="/citizen/profile"
+            )
+        finally:
+            bg_db.close()
+    except Exception as e:
+        print(f"[BG TASK WARNING] log/notif failed: {e}")
+
 # 2. CREATE NEW PERMIT (PENGAJUAN OLEH WARGA DENGAN DURASI & EMAIL A)
 @router.post('', status_code=status.HTTP_201_CREATED)
 async def create_permit(
@@ -433,15 +468,12 @@ async def create_permit(
                 hashed_password="$2b$12$eImiTXuWVxfM37uY4JANjOL.81F8Rj0gK7W3f5yG0C31i8e2A9.me"
             )
             db.add(existing_user)
-            db.commit()
-            db.refresh(existing_user)
         elif existing_user:
             # Sinkronkan NIK dan Nomor HP warga jika belum terisi
             if filtered_data.get('nik') and hasattr(existing_user, 'nik') and not existing_user.nik:
                 existing_user.nik = filtered_data['nik']
             if filtered_data.get('phone') and hasattr(existing_user, 'phone') and not existing_user.phone:
                 existing_user.phone = filtered_data['phone']
-            db.commit()
 
         if existing_user:
             filtered_data['applicant_id'] = existing_user.id
@@ -450,12 +482,11 @@ async def create_permit(
 
         new_permit = Permit(**filtered_data)
         db.add(new_permit)
-        db.commit()
-        db.refresh(new_permit)
 
         # Simpan berkas pendukung secara instan ke disk lokal
         valid_doc_cols = {c.name for c in PermitDocument.__table__.columns}
         files_for_cloud_bg = []
+        created_docs = []
         for field_name, file_item in uploaded_files:
             file_contents = await file_item.read()
             file_size = len(file_contents)
@@ -482,36 +513,10 @@ async def create_permit(
             }
             doc_entry = PermitDocument(**{k: v for k, v in doc_kwargs.items() if k in valid_doc_cols})
             db.add(doc_entry)
+            created_docs.append(doc_entry)
             files_for_cloud_bg.append((doc_id, file_contents))
 
-        if uploaded_files:
-            db.commit()
-
         permit_num = new_permit.permit_number
-
-        # 1. Catat ke Audit Log
-        log_activity(
-            db=db,
-            action="CREATE_PERMIT_APPLICATION",
-            module="PERMITS",
-            user_id=str(new_permit.applicant_id),
-            role="CITIZEN",
-            reference=permit_num,
-            status="SUCCESS"
-        )
-
-        # 2. Buat Notifikasi Internal
-        try:
-            create_notification(
-                db=db,
-                user_id=str(new_permit.applicant_id),
-                title="Permohonan Izin Baru",
-                message=f"Permohonan izin baru ({permit_num}) telah berhasil diajukan dan sedang menunggu verifikasi.",
-                type="PERMIT_STATUS",
-                link_url="/citizen/profile"
-            )
-        except Exception as notif_err:
-            print("Warning notif:", notif_err)
 
         # 3. Buat Invoice Retribusi QRIS untuk seluruh permohonan izin (termasuk 1 bulan)
         rate_kebersihan = 50000.0 * req_duration
@@ -551,8 +556,6 @@ async def create_permit(
             qris_url=snap_res.get("qris_url") or snap_res.get("redirect_url")
         )
         db.add(new_invoice)
-        db.commit()
-        db.refresh(new_invoice)
 
         item1 = InvoiceItem(
             id=str(uuid.uuid4()),
@@ -571,16 +574,17 @@ async def create_permit(
             subtotal=rate_keamanan
         )
         db.add_all([item1, item2])
+
+        # SINGLE ATOMIC COMMIT UNTUK SEMUA ENTITAS (menghemat 5x roundtrip ke cloud DB)
         db.commit()
 
-        # Jalankan background tasks (Upload Cloudinary & Generate Invoice PDF) secara asinkron
-        # sehingga response create_permit kembali ke frontend dalam waktu < 1-2 detik
+        # Enqueue background tasks (Audit Log, Notifikasi, Cloudinary upload & Invoice PDF generation)
+        background_tasks.add_task(bg_post_permit_creation_tasks, str(new_permit.applicant_id), permit_num)
         for doc_id, file_bytes in files_for_cloud_bg:
             background_tasks.add_task(bg_upload_permit_document_to_cloudinary, doc_id, file_bytes)
-
         background_tasks.add_task(bg_generate_invoice_pdf, new_invoice.id, new_permit.id)
 
-        return serialize_permit(new_permit, db)
+        return serialize_permit(new_permit, db, preloaded_invoice=new_invoice, preloaded_docs=created_docs)
 
     except HTTPException as http_err:
         db.rollback()
