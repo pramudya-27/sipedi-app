@@ -36,7 +36,6 @@ import {PermitPaymentPage} from "../pages/citizen/PermitPaymentPage";
 import {PaymentFinishPage} from "../pages/citizen/PaymentFinishPage";
 
 // Admin Pages
-import {AdminLanding} from "../pages/admin/AdminLanding";
 import {AdminLogin} from "../pages/admin/AdminLogin";
 import {AdminDashboard} from "../pages/admin/AdminDashboard";
 import {AdminPermitList} from "../pages/admin/AdminPermitList";
@@ -236,6 +235,22 @@ const AnimatedRoutes = () => {
           />
           <Route
             path="/payment/finish"
+            element={
+              <PageTransition>
+                <PaymentFinishPage />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/payment/unfinish"
+            element={
+              <PageTransition>
+                <PaymentFinishPage />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/payment/error"
             element={
               <PageTransition>
                 <PaymentFinishPage />
