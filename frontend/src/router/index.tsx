@@ -36,6 +36,7 @@ import {PermitPaymentPage} from "../pages/citizen/PermitPaymentPage";
 import {PaymentFinishPage} from "../pages/citizen/PaymentFinishPage";
 
 // Admin Pages
+import {AdminLanding} from "../pages/admin/AdminLanding";
 import {AdminLogin} from "../pages/admin/AdminLogin";
 import {AdminDashboard} from "../pages/admin/AdminDashboard";
 import {AdminPermitList} from "../pages/admin/AdminPermitList";
@@ -145,24 +146,34 @@ const AnimatedRoutes = () => {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        {/* 1. Public Routes */}
-        <Route element={<PublicLayout />}>
+        {/* Standalone Admin Domain Root Route */}
+        {isDomainAdmin && (
           <Route
             path="/"
             element={
-              isDomainAdmin ? (
-                isAdmin ? (
-                  <Navigate to="/admin/dashboard" replace />
-                ) : (
-                  <Navigate to="/admin/login" replace />
-                )
+              isAdmin ? (
+                <Navigate to="/admin/dashboard" replace />
               ) : (
                 <PageTransition>
-                  <LandingPage />
+                  <AdminLanding />
                 </PageTransition>
               )
             }
           />
+        )}
+
+        {/* 1. Public Routes */}
+        <Route element={<PublicLayout />}>
+          {!isDomainAdmin && (
+            <Route
+              path="/"
+              element={
+                <PageTransition>
+                  <LandingPage />
+                </PageTransition>
+              }
+            />
+          )}
           <Route
             path="/about"
             element={
@@ -191,21 +202,29 @@ const AnimatedRoutes = () => {
           <Route
             path="/login"
             element={
-              <GuestRoute>
-                <PageTransition>
-                  <Login />
-                </PageTransition>
-              </GuestRoute>
+              isDomainAdmin ? (
+                <Navigate to="/admin/login" replace />
+              ) : (
+                <GuestRoute>
+                  <PageTransition>
+                    <Login />
+                  </PageTransition>
+                </GuestRoute>
+              )
             }
           />
           <Route
             path="/register"
             element={
-              <GuestRoute>
-                <PageTransition>
-                  <Register />
-                </PageTransition>
-              </GuestRoute>
+              isDomainAdmin ? (
+                <Navigate to="/admin/login" replace />
+              ) : (
+                <GuestRoute>
+                  <PageTransition>
+                    <Register />
+                  </PageTransition>
+                </GuestRoute>
+              )
             }
           />
 
@@ -269,7 +288,7 @@ const AnimatedRoutes = () => {
               <Navigate to="/admin/dashboard" replace />
             ) : (
               <PageTransition>
-                <AdminLogin />
+                <AdminLanding />
               </PageTransition>
             )
           }

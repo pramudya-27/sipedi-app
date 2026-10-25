@@ -48,6 +48,13 @@ export const AdminLanding: React.FC = () => {
           {/* Quick Access Button & Language */}
           <div className="flex items-center space-x-4">
             <LanguageSelector textColor="text-slate-700 hover:text-blue-600" />
+            <a
+              href="https://sipedi.daimyo-lab.me"
+              className="text-xs font-semibold text-slate-500 hover:text-blue-600 transition hidden sm:inline-flex items-center space-x-1"
+            >
+              <span>Portal Warga</span>
+              <span>&rarr;</span>
+            </a>
             <Link
               to="/admin/login"
               className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100/80 border border-blue-200/80 px-5 py-2.5 rounded-xl transition-all shadow-sm flex items-center space-x-2"
