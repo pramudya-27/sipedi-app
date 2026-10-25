@@ -1,32 +1,90 @@
-# React + TypeScript + Vite
+# 💻 SIPEDI — Frontend Client Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Frontend modern berbasis **React 19**, **TypeScript**, **Vite**, **Tailwind CSS**, dan **Framer Motion** untuk platform pelayanan publik digital SIPEDI (*Sistem Informasi Perizinan & Pengaduan Digital*).
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Fitur Utama Frontend
 
-## React Compiler
+1. **Multi-Domain Routing**:
+   * Domain `sipedi.daimyo-lab.me` otomatis membuka Portal Publik & Layanan Warga.
+   * Domain `admin.daimyo-lab.me` otomatis membuka Landing Page khusus Pengawas dan Dashboard Admin terisolasi.
+2. **Animasi Transisi Halus (Gaya Danantara)**:
+   * Menggunakan Framer Motion dengan kurva *cubic-bezier* halus untuk animasi kemunculan elemen saat di-*scroll* (*scroll-triggered inView reveal*).
+   * Animasi metrik dampak publik dan efek visual kartu modern.
+3. **Internasionalisasi (i18n)**:
+   * Dukungan penuh dwibahasa (*Bahasa Indonesia* & *English*) menggunakan `react-i18next`.
+4. **Integrasi Pembayaran Otomatis**:
+   * Mengalihkan permohonan izin langsung ke portal pembayaran resmi Midtrans Snap (QRIS, VA Bank, E-Wallet).
+   * Halaman penyelesaian pembayaran pintar (`PaymentFinishPage`) yang memvalidasi parameter callback transaksi secara otomatis.
+5. **Asisten AI Mengambang**:
+   * Widget chat asisten hukum dan regulasi UMKM yang dapat dipanggil dari seluruh halaman.
+6. **Grafik & Metrik Eksekutif**:
+   * Menggunakan `Recharts` untuk menampilkan tren bulanan pengaduan dan distribusi kategori layanan.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 🛠️ Tech Stack & Dependensi
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+* **Core**: React 19, TypeScript, Vite
+* **Styling**: Tailwind CSS v3, Tailwind Merge, CLSX
+* **Animasi**: Framer Motion
+* **Routing**: React Router DOM v7
+* **State Management**: Zustand
+* **Server State**: TanStack Query (React Query v5)
+* **HTTP Client**: Axios
+* **Icons & Charts**: Lucide React, Recharts
+* **Internationalization**: i18next, react-i18next
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+---
+
+## 📁 Struktur Direktori
+
+```text
+frontend/
+├── public/                     # Aset statis publik (logo1.png, favicon.png, icons.svg)
+├── src/
+│   ├── assets/                 # Gambar latar, tekstur, foto dokumentasi
+│   ├── components/             # Komponen UI modular (Navbar, Footer, Modal, ProtectedRoute)
+│   ├── hooks/                  # Custom hooks (useDashboardData, dll.)
+│   ├── i18n/                   # Konfigurasi kamus bahasa i18next
+│   │   └── locales/            # Kamus terjemahan id dan en
+│   ├── pages/
+│   │   ├── admin/              # AdminLanding, AdminDashboard, AdminPermitList, dll.
+│   │   ├── citizen/            # CreatePermit, PermitPaymentPage, PaymentFinishPage, Profile, dll.
+│   │   └── public/             # LandingPage, AboutUs, Services, Login, Register
+│   ├── router/                 # Konfigurasi rute & deteksi domain admin/citizen
+│   ├── services/               # Abstraksi API (authService, permitService, paymentService, dll.)
+│   ├── store/                  # Store global Zustand (authStore, chatStore)
+│   └── main.tsx                # Entrypoint React
+├── vercel.json                 # Konfigurasi routing SPA rewrite Vercel
+├── package.json
+└── vite.config.ts
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+---
+
+## ⚙️ Variabel Lingkungan (.env)
+
+Buat file `.env` di direktori `frontend/`:
+
+```env
+VITE_API_BASE_URL=https://daimyo27-sipedi-backend.hf.space/api
+VITE_OPENROUTER_API_KEY=your_openrouter_api_key_here
+```
+
+---
+
+## 📦 Menjalankan Secara Lokal
+
+```bash
+# 1. Install dependensi
+npm install
+
+# 2. Jalankan mode development
+npm run dev
+
+# 3. Build untuk produksi
+npm run build
+```
+Aplikasi akan aktif di `http://localhost:5173`.
