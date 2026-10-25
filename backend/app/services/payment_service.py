@@ -28,6 +28,7 @@ def create_snap_transaction(
     is_prod = settings.MIDTRANS_IS_PRODUCTION
     base_url = "https://app.midtrans.com/snap/v1/transactions" if is_prod else "https://app.sandbox.midtrans.com/snap/v1/transactions"
 
+    frontend_base = settings.FRONTEND_URL.rstrip('/')
     payload = {
         "transaction_details": {
             "order_id": order_id,
@@ -37,7 +38,9 @@ def create_snap_transaction(
         "item_details": item_details,
         "enabled_payments": ["qris", "gopay", "shopeepay", "bca_va", "bni_va", "bri_va", "permata_va", "other_va"],
         "callbacks": {
-            "finish": f"http://localhost:5173/payment/finish?order_id={order_id}"
+            "finish": f"{frontend_base}/payment/finish?order_id={order_id}",
+            "unfinish": f"{frontend_base}/payment/finish?order_id={order_id}&transaction_status=pending",
+            "error": f"{frontend_base}/payment/finish?order_id={order_id}&transaction_status=failure"
         }
     }
 
