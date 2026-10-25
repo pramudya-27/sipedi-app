@@ -57,7 +57,7 @@ export const permitService = {
 
   createPermit: async (data: FormData | any, file?: File): Promise<any> => {
     if (data instanceof FormData) {
-      const res = await api.post('/permits', data);
+      const res = await api.post('/permits', data, { timeout: 90000 });
       return res.data;
     }
 
@@ -71,11 +71,11 @@ export const permitService = {
       formData.append('file', file);
       formData.append('documents', file);
 
-      const res = await api.post('/permits', formData);
+      const res = await api.post('/permits', formData, { timeout: 90000 });
       return res.data;
     }
 
-    const res = await api.post('/permits', data);
+    const res = await api.post('/permits', data, { timeout: 90000 });
     return res.data;
   },
 
