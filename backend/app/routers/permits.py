@@ -5,7 +5,7 @@ import json
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request, BackgroundTasks
 from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -266,10 +266,47 @@ def get_permit_detail(permit_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail='Data perizinan tidak ditemukan.')
     return serialize_permit(permit, db)
 
+def bg_upload_permit_document_to_cloudinary(doc_id: str, file_bytes: bytes):
+    try:
+        cloud_url = upload_file_to_cloudinary(
+            file=io.BytesIO(file_bytes),
+            folder_name="sipedi/permits",
+            public_id=f"doc_{uuid.uuid4()}"
+        )
+        if cloud_url:
+            from app.core.database import SessionLocal
+            bg_db = SessionLocal()
+            try:
+                doc = bg_db.query(PermitDocument).filter(PermitDocument.id == doc_id).first()
+                if doc:
+                    doc.file_path = cloud_url
+                    bg_db.commit()
+            finally:
+                bg_db.close()
+    except Exception as e:
+        print(f"[BG TASK WARNING] Cloudinary upload for doc {doc_id}: {e}")
+
+def bg_generate_invoice_pdf(invoice_id: str, permit_id: str):
+    try:
+        from app.core.database import SessionLocal
+        bg_db = SessionLocal()
+        try:
+            inv = bg_db.query(Invoice).filter(Invoice.id == invoice_id).first()
+            prm = bg_db.query(Permit).filter(Permit.id == permit_id).first()
+            if inv and prm and not inv.pdf_path:
+                inv_pdf_path, _ = generate_invoice_pdf(inv, prm, prm.applicant)
+                inv.pdf_path = inv_pdf_path
+                bg_db.commit()
+        finally:
+            bg_db.close()
+    except Exception as e:
+        print(f"[BG TASK WARNING] Invoice PDF generation for {invoice_id}: {e}")
+
 # 2. CREATE NEW PERMIT (PENGAJUAN OLEH WARGA DENGAN DURASI & EMAIL A)
 @router.post('', status_code=status.HTTP_201_CREATED)
 async def create_permit(
     request: Request,
+    background_tasks: BackgroundTasks,
     current_user: Optional[User] = Depends(get_optional_current_user),
     db: Session = Depends(get_db)
 ):
@@ -416,8 +453,9 @@ async def create_permit(
         db.commit()
         db.refresh(new_permit)
 
-        # Simpan berkas pendukung
+        # Simpan berkas pendukung secara instan ke disk lokal
         valid_doc_cols = {c.name for c in PermitDocument.__table__.columns}
+        files_for_cloud_bg = []
         for field_name, file_item in uploaded_files:
             file_contents = await file_item.read()
             file_size = len(file_contents)
@@ -431,29 +469,20 @@ async def create_permit(
             with open(file_path, "wb") as f:
                 f.write(file_contents)
 
-            cloud_url = None
-            try:
-                cloud_url = upload_file_to_cloudinary(
-                    file=io.BytesIO(file_contents),
-                    folder_name="sipedi/permits",
-                    public_id=f"doc_{uuid.uuid4()}"
-                )
-            except Exception as e:
-                print(f"Cloudinary upload warning: {e}")
-
-            final_path = cloud_url if cloud_url else f"/{file_path}"
+            doc_id = str(uuid.uuid4())
             doc_kwargs = {
-                "id": str(uuid.uuid4()),
+                "id": doc_id,
                 "permit_id": new_permit.id,
                 "file_name": file_name,
                 "document_type": field_name.upper(),
-                "file_path": final_path,
+                "file_path": f"/{file_path}",
                 "file_size": file_size,
                 "mime_type": content_type,
                 "status": "PENDING"
             }
             doc_entry = PermitDocument(**{k: v for k, v in doc_kwargs.items() if k in valid_doc_cols})
             db.add(doc_entry)
+            files_for_cloud_bg.append((doc_id, file_contents))
 
         if uploaded_files:
             db.commit()
@@ -544,13 +573,12 @@ async def create_permit(
         db.add_all([item1, item2])
         db.commit()
 
-        # Generate Invoice PDF (untuk ditampilkan di halaman pembayaran QRIS)
-        try:
-            inv_pdf_path, inv_pdf_bytes = generate_invoice_pdf(new_invoice, new_permit, new_permit.applicant)
-            new_invoice.pdf_path = inv_pdf_path
-            db.commit()
-        except Exception as inv_err:
-            print("Warning generate invoice pdf:", inv_err)
+        # Jalankan background tasks (Upload Cloudinary & Generate Invoice PDF) secara asinkron
+        # sehingga response create_permit kembali ke frontend dalam waktu < 1-2 detik
+        for doc_id, file_bytes in files_for_cloud_bg:
+            background_tasks.add_task(bg_upload_permit_document_to_cloudinary, doc_id, file_bytes)
+
+        background_tasks.add_task(bg_generate_invoice_pdf, new_invoice.id, new_permit.id)
 
         return serialize_permit(new_permit, db)
 
