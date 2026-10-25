@@ -155,7 +155,7 @@ export const CreatePermit: React.FC = () => {
       const invNum = invData?.invoice_number;
       const snapRedirectUrl = invData?.snap_redirect_url;
 
-      if (formData.durationMonths > 1 && (snapRedirectUrl || invNum)) {
+      if (snapRedirectUrl || invNum) {
         setToastContent({
           title: "Pengajuan Tercatat — Menuju Pembayaran Midtrans",
           desc: "Mengalihkan Anda langsung ke portal pembayaran resmi Midtrans (QRIS, VA Bank & E-Wallet)..."
@@ -171,8 +171,8 @@ export const CreatePermit: React.FC = () => {
         }, 1200);
       } else {
         setToastContent({
-          title: t('permits.toastSavedTitle'),
-          desc: t('permits.toastSavedDesc')
+          title: t('permits.toastSavedTitle', 'Pengajuan Berhasil Dikirim'),
+          desc: t('permits.toastSavedDesc', 'Data permohonan izin Anda telah dicatat.')
         });
         setShowToast(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -182,15 +182,18 @@ export const CreatePermit: React.FC = () => {
       }
 
     } catch (err: any) {
-      console.error(err);
-      const detail = err.response?.data?.detail;
+      console.error("Submit permit error:", err);
+      const detail = err.response?.data?.detail || err.response?.data?.message || err.message;
       if (typeof detail === 'string') {
         setErrorMsg(detail);
       } else if (Array.isArray(detail)) {
         setErrorMsg(detail.map((d: any) => d.msg || JSON.stringify(d)).join(', '));
+      } else if (typeof detail === 'object') {
+        setErrorMsg(JSON.stringify(detail));
       } else {
-        setErrorMsg('Gagal mengajukan izin. Silakan coba lagi.');
+        setErrorMsg('Gagal mengajukan izin. Silakan periksa kelengkapan data Anda.');
       }
+      window.scrollTo({ top: 120, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -501,7 +504,7 @@ export const CreatePermit: React.FC = () => {
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200/80 bg-white/90 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-500 transition-all shadow-sm scroll-mt-28"
                   >
-                    <option value={1}>1 Bulan (Gratis / Bebas Biaya)</option>
+                    <option value={1}>1 Bulan (Retribusi Resmi - Rp 100.000)</option>
                     <option value={3}>3 Bulan (Retribusi Resmi)</option>
                     <option value={6}>6 Bulan (Retribusi Resmi)</option>
                     <option value={12}>12 Bulan (1 Tahun Penuh)</option>

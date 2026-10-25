@@ -337,11 +337,8 @@ async def create_permit(
         req_duration = int(data.get('duration_months') or data.get('duration') or 1)
         filtered_data['duration_months'] = req_duration
 
-        # Status awal: jika durasi > 1 bulan, status Pending Payment (wajib bayar QRIS sebelum masuk admin)
-        if req_duration > 1:
-            filtered_data['status'] = 'Pending Payment'
-        else:
-            filtered_data['status'] = 'Submitted'
+        # Status awal: Pending Payment (wajib bayar retribusi resmi sebelum masuk verifikasi admin)
+        filtered_data['status'] = 'Pending Payment'
 
         # Tanggal mulai
         req_start_date = data.get('start_date')
@@ -430,6 +427,7 @@ async def create_permit(
             file_ext = os.path.splitext(file_name)[1].lower()
             unique_filename = f"{uuid.uuid4()}{file_ext}"
             file_path = f"uploads/permits/{unique_filename}"
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
             with open(file_path, "wb") as f:
                 f.write(file_contents)
 
@@ -486,85 +484,73 @@ async def create_permit(
         except Exception as notif_err:
             print("Warning notif:", notif_err)
 
-        if req_duration > 1:
-            # 3. Buat Invoice Retribusi QRIS (untuk pengajuan durasi > 1 bulan)
-            rate_kebersihan = 50000.0 * req_duration
-            rate_keamanan = 50000.0 * req_duration
-            total_amount = rate_kebersihan + rate_keamanan
+        # 3. Buat Invoice Retribusi QRIS untuk seluruh permohonan izin (termasuk 1 bulan)
+        rate_kebersihan = 50000.0 * req_duration
+        rate_keamanan = 50000.0 * req_duration
+        total_amount = rate_kebersihan + rate_keamanan
 
-            invoice_num = f"INV-{datetime.utcnow().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
-            due_date = datetime.utcnow() + relativedelta(days=3)
+        invoice_num = f"INV-{datetime.utcnow().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+        due_date = datetime.utcnow() + relativedelta(days=3)
 
-            snap_res = create_snap_transaction(
-                order_id=invoice_num,
-                gross_amount=total_amount,
-                customer_details={
-                    "first_name": new_permit.applicant_name or "Pemohon SIPEDI",
-                    "email": new_permit.email,
-                    "phone": new_permit.phone or "08123456789"
-                },
-                item_details=[
-                    {"id": "RET-KEBERSIHAN", "price": 50000, "quantity": req_duration, "name": f"Retribusi Kebersihan ({req_duration} Bulan)"},
-                    {"id": "RET-KEAMANAN", "price": 50000, "quantity": req_duration, "name": f"Retribusi Keamanan ({req_duration} Bulan)"}
-                ]
-            )
+        snap_res = create_snap_transaction(
+            order_id=invoice_num,
+            gross_amount=total_amount,
+            customer_details={
+                "first_name": new_permit.applicant_name or "Pemohon SIPEDI",
+                "email": new_permit.email,
+                "phone": new_permit.phone or "08123456789"
+            },
+            item_details=[
+                {"id": "RET-KEBERSIHAN", "price": 50000, "quantity": req_duration, "name": f"Retribusi Kebersihan ({req_duration} Bulan)"},
+                {"id": "RET-KEAMANAN", "price": 50000, "quantity": req_duration, "name": f"Retribusi Keamanan ({req_duration} Bulan)"}
+            ]
+        )
 
-            new_invoice = Invoice(
-                id=str(uuid.uuid4()),
-                invoice_number=invoice_num,
-                permit_id=new_permit.id,
-                renewal_id=None,
-                user_id=new_permit.applicant_id,
-                subtotal=total_amount,
-                total_amount=total_amount,
-                status="UNPAID",
-                due_date=due_date,
-                payment_method="QRIS",
-                snap_token=snap_res.get("token"),
-                snap_redirect_url=snap_res.get("redirect_url"),
-                qris_url=snap_res.get("qris_url") or snap_res.get("redirect_url")
-            )
-            db.add(new_invoice)
+        new_invoice = Invoice(
+            id=str(uuid.uuid4()),
+            invoice_number=invoice_num,
+            permit_id=new_permit.id,
+            renewal_id=None,
+            user_id=new_permit.applicant_id,
+            subtotal=total_amount,
+            total_amount=total_amount,
+            status="UNPAID",
+            due_date=due_date,
+            payment_method="QRIS",
+            snap_token=snap_res.get("token"),
+            snap_redirect_url=snap_res.get("redirect_url"),
+            qris_url=snap_res.get("qris_url") or snap_res.get("redirect_url")
+        )
+        db.add(new_invoice)
+        db.commit()
+        db.refresh(new_invoice)
+
+        item1 = InvoiceItem(
+            id=str(uuid.uuid4()),
+            invoice_id=new_invoice.id,
+            item_name=f"Iuran Retribusi Kebersihan ({req_duration} Bulan)",
+            quantity=req_duration,
+            unit_price=50000.0,
+            subtotal=rate_kebersihan
+        )
+        item2 = InvoiceItem(
+            id=str(uuid.uuid4()),
+            invoice_id=new_invoice.id,
+            item_name=f"Iuran Retribusi Ketertiban & Keamanan ({req_duration} Bulan)",
+            quantity=req_duration,
+            unit_price=50000.0,
+            subtotal=rate_keamanan
+        )
+        db.add_all([item1, item2])
+        db.commit()
+
+        # Generate Invoice PDF (untuk ditampilkan di halaman pembayaran QRIS)
+        try:
+            inv_pdf_path, inv_pdf_bytes = generate_invoice_pdf(new_invoice, new_permit, new_permit.applicant)
+            new_invoice.pdf_path = inv_pdf_path
             db.commit()
-            db.refresh(new_invoice)
-
-            item1 = InvoiceItem(
-                id=str(uuid.uuid4()),
-                invoice_id=new_invoice.id,
-                item_name=f"Iuran Retribusi Kebersihan ({req_duration} Bulan)",
-                quantity=req_duration,
-                unit_price=50000.0,
-                subtotal=rate_kebersihan
-            )
-            item2 = InvoiceItem(
-                id=str(uuid.uuid4()),
-                invoice_id=new_invoice.id,
-                item_name=f"Iuran Retribusi Ketertiban & Keamanan ({req_duration} Bulan)",
-                quantity=req_duration,
-                unit_price=50000.0,
-                subtotal=rate_keamanan
-            )
-            db.add_all([item1, item2])
-            db.commit()
-
-            # Generate Invoice PDF (untuk ditampilkan di halaman pembayaran QRIS)
-            inv_pdf_bytes = None
-            try:
-                inv_pdf_path, inv_pdf_bytes = generate_invoice_pdf(new_invoice, new_permit, new_permit.applicant)
-                new_invoice.pdf_path = inv_pdf_path
-                db.commit()
-            except Exception as inv_err:
-                print("Warning generate invoice pdf:", inv_err)
-
-            # Untuk permohonan baru, pemohon langsung dialihkan ke layar pembayaran QRIS di browser,
-            # sehingga tidak perlu mengirim email tagihan (email tagihan hanya dikirim saat perpanjangan izin).
-
-        else:
-            # 3. KIRIM EMAIL A: PENGAJUAN DITERIMA VIA BREVO (Durasi 1 Bulan Gratis)
-            try:
-                send_permit_submitted_email(new_permit, db=db)
-            except Exception as mail_err:
-                print("Warning kirim Email A:", mail_err)
+        except Exception as inv_err:
+            print("Warning generate invoice pdf:", inv_err)
 
         return serialize_permit(new_permit, db)
 
