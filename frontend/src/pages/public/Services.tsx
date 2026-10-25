@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import { useChatStore } from '../../store/chatStore';
 import { 
   ArrowRight, 
@@ -12,6 +13,8 @@ import {
   ShieldAlert, 
   Bot 
 } from 'lucide-react';
+
+const easeOutQuart = [0.16, 1, 0.3, 1] as const;
 
 export const Services: React.FC = () => {
   const { t } = useTranslation();
@@ -79,12 +82,22 @@ export const Services: React.FC = () => {
       <div className="relative z-10 flex-grow py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          {/* Header Layout */}
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-blue-600 font-extrabold tracking-wider uppercase text-xs bg-blue-50 px-3.5 py-1.5 rounded-full border border-blue-200/80 shadow-sm mb-4 inline-block">
+          {/* Header Layout with Danantara Entrance Animation */}
+          <motion.div
+            initial={{ opacity: 0, y: 35 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.85, ease: easeOutQuart }}
+            className="text-center max-w-3xl mx-auto mb-16"
+          >
+            <motion.span
+              initial={{ opacity: 0, y: -15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-blue-600 font-extrabold tracking-wider uppercase text-xs bg-blue-50 px-3.5 py-1.5 rounded-full border border-blue-200/80 shadow-sm mb-4 inline-block"
+            >
               {t('services.badge')}
-            </span>
-            <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-5 tracking-tight leading-tight">
+            </motion.span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 mb-5 tracking-tight leading-tight">
               {t('services.title')} <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700">
                 {t('services.titleHighlight')}
@@ -93,14 +106,18 @@ export const Services: React.FC = () => {
             <p className="text-base md:text-lg text-slate-600 font-medium leading-relaxed">
               {t('services.subtitle')}
             </p>
-          </div>
+          </motion.div>
 
-          {/* Cards Section */}
+          {/* Cards Section with Staggered Scroll Reveal */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {services.map((service) => (
-              <div 
-                key={service.id} 
-                className="group relative bg-white rounded-3xl p-8 border border-slate-200/80 shadow-[0_10px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(37,99,235,0.12)] hover:-translate-y-2 transition-all duration-500 overflow-hidden flex flex-col justify-between"
+            {services.map((service, index) => (
+              <motion.div
+                key={service.id}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.75, delay: index * 0.15, ease: easeOutQuart }}
+                className="group relative bg-white rounded-3xl p-8 border border-slate-200/80 shadow-[0_10px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_25px_50px_rgba(37,99,235,0.12)] hover:-translate-y-2 transition-all duration-500 overflow-hidden flex flex-col justify-between"
               >
                 {/* Soft Color Blob Background on Hover */}
                 <div className={`absolute -top-10 -right-10 w-40 h-40 rounded-full blur-2xl group-hover:scale-150 transition-all duration-700 ease-out pointer-events-none ${
@@ -111,9 +128,9 @@ export const Services: React.FC = () => {
 
                 <div className="relative z-10 flex-grow flex flex-col justify-between">
                   <div>
-                    {/* Icon Box & Badge */}
-                    <div className="flex items-center justify-between mb-6">
-                      <div className={`w-13 h-13 rounded-2xl flex items-center justify-center p-3 border transition-all duration-300 shadow-sm ${
+                    {/* Top Row: Icon & Badge */}
+                    <div className="flex items-center justify-between mb-8">
+                      <div className={`w-13 h-13 rounded-2xl flex items-center justify-center p-3 transition-all duration-300 shadow-sm border ${
                         service.color === 'blue' ? 'bg-blue-50 border-blue-100 group-hover:bg-blue-600' :
                         service.color === 'rose' ? 'bg-rose-50 border-rose-100 group-hover:bg-rose-600' :
                         'bg-amber-50 border-amber-100 group-hover:bg-amber-500'
@@ -130,11 +147,11 @@ export const Services: React.FC = () => {
                       </span>
                     </div>
 
-                    <h3 className="text-xl font-extrabold text-slate-900 mb-3 tracking-tight">
+                    <h3 className="text-xl md:text-2xl font-black text-slate-900 mb-3 tracking-tight">
                       {service.title}
                     </h3>
                     
-                    <p className="text-slate-500 text-xs md:text-sm leading-relaxed mb-6">
+                    <p className="text-slate-500 text-xs md:text-sm leading-relaxed mb-6 font-medium">
                       {service.description}
                     </p>
 
@@ -162,7 +179,7 @@ export const Services: React.FC = () => {
                     <button
                       type="button"
                       onClick={openChat}
-                      className="w-full inline-flex items-center justify-center font-bold text-xs sm:text-sm py-3.5 px-6 rounded-2xl transition-all shadow-md group-hover:shadow-lg bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20 cursor-pointer"
+                      className="w-full inline-flex items-center justify-center font-extrabold text-xs sm:text-sm py-3.5 px-6 rounded-2xl transition-all shadow-md group-hover:shadow-lg bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                     >
                       <span>{service.actionText}</span>
                       <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1.5 transition-transform duration-300" strokeWidth={2.5} />
@@ -170,7 +187,7 @@ export const Services: React.FC = () => {
                   ) : (
                     <Link 
                       to={service.link}
-                      className={`w-full inline-flex items-center justify-center font-bold text-xs sm:text-sm py-3.5 px-6 rounded-2xl transition-all shadow-md group-hover:shadow-lg ${
+                      className={`w-full inline-flex items-center justify-center font-extrabold text-xs sm:text-sm py-3.5 px-6 rounded-2xl transition-all shadow-md group-hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] ${
                         service.color === 'blue' ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20' :
                         'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-500/20'
                       }`}
@@ -180,12 +197,18 @@ export const Services: React.FC = () => {
                     </Link>
                   )}
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
 
-          {/* Guarantee Banner */}
-          <div className="mt-16 bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-center gap-6 shadow-sm">
+          {/* Guarantee Banner with Smooth Reveal */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.7, ease: easeOutQuart }}
+            className="mt-16 bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-center gap-6 shadow-sm"
+          >
             <div className="flex items-center gap-2 text-slate-700">
               <CheckCircle2 className="w-5 h-5 text-emerald-600" strokeWidth={2} />
               <span className="font-bold text-xs sm:text-sm">{t('services.guarantee1')}</span>
@@ -200,7 +223,7 @@ export const Services: React.FC = () => {
               <ShieldCheck className="w-5 h-5 text-rose-600" strokeWidth={2} />
               <span className="font-bold text-xs sm:text-sm">{t('services.guarantee3')}</span>
             </div>
-          </div>
+          </motion.div>
 
         </div>
       </div>
