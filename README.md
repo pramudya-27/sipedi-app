@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Platform Layanan Publik Digital Skala Besar Berbasis Kecerdasan Buatan (AI) & Multi-Domain Gateway</strong><br>
-  <em>Karya Inovasi Web Development — IT FEST 2026 (Pelayanan Publik dalam Skala Besar / Smart Government)</em>
+  <em>Karya Inovasi Lomba AI Web Innovation Challenge | Bali DigiFest 2026</em>
 </p>
 
 <p align="center">
@@ -325,7 +325,7 @@ Untuk mempermudah dewan juri / penguji mengeksplorasi sistem:
 
 ## 🏆 11. Kategori & Informasi Kompetisi
 
-* **Ajang**: IT FEST 2026 Web Development Competition
+* **Ajang**: Lomba AI Web Innovation Challenge | Bali DigiFest 2026
 * **Tema**: *Pelayanan Publik dalam Skala Besar*
 * **Karya Inovasi**: SIPEDI (*Sistem Informasi Perizinan Digital Mikro & Layanan Pengaduan Berbasis Asisten AI*)
 * **Pengembang**: Pramudya & Tim Pengembang SIPEDI
