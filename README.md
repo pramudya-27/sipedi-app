@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Platform Layanan Publik Digital Skala Besar Berbasis Kecerdasan Buatan (AI) & Multi-Domain Gateway</strong><br>
-  <em>Karya Inovasi Web Development — IT FEST 2026 (Pelayanan Publik dalam Skala Besar / Smart Government)</em>
+  <em>Karya Inovasi Web Development — AI Web Innovation Challenge | Bali DigiFest 2026</em>
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 
 ## 📌 1. Ikhtisar & Latar Belakang Proyek
 
-**SIPEDI** (*Sistem Informasi Perizinan & Pengaduan Digital*) adalah platform *Smart Governance* generasi baru yang mentransformasikan birokrasi perizinan usaha mikro dan penanganan ketertiban lingkungan menjadi satu ekosistem digital terpadu, instan, akuntabel, dan bebas pungutan liar (pungli).
+**SIPEDI** (*Sistem Informasi Perizinan & Pengaduan Digital*) adalah platform *Smart Governance* generasi baru berbasis AI yang mentransformasikan birokrasi perizinan usaha mikro dan penanganan ketertiban lingkungan menjadi satu ekosistem digital terpadu, instan, akuntabel, dan bebas pungutan liar (pungli).
 
 ### Masalah Nyata yang Diselesaikan:
 1. **Birokrasi Perizinan UMKM yang Lambat & Rawan Pungli**: Pelaku UMKM sering kesulitan mengurus Izin Usaha Mikro Kecil (IUMK), menghadapi calo, dan tidak memiliki kepastian status hukum usahanya.
@@ -325,8 +325,8 @@ Untuk mempermudah dewan juri / penguji mengeksplorasi sistem:
 
 ## 🏆 11. Kategori & Informasi Kompetisi
 
-* **Ajang**: IT FEST 2026 Web Development Competition
-* **Tema**: *Pelayanan Publik dalam Skala Besar*
+* **Ajang**: Bali DigiFest 2026
+* **Lomba**: AI Web Innovation Challenge
 * **Karya Inovasi**: SIPEDI (*Sistem Informasi Perizinan Digital Mikro & Layanan Pengaduan Berbasis Asisten AI*)
 * **Pengembang**: Pramudya & Tim Pengembang SIPEDI
 * **Tahun**: 2026
